@@ -160,6 +160,17 @@ body.kiosk,body.kiosk *{cursor:none!important}
 #fxc{left:0;top:0;z-index:35;pointer-events:none}
 #dim{inset:0;z-index:40;background:#000;opacity:0;pointer-events:none}
 
+/* monitor do Pi (chip da CPU) e aba Sistema */
+.pit{font:700 8px var(--mono);fill:#7fbfb4}
+.pil{font:500 9px var(--mono);fill:#8fb8b0}
+.piv{font:700 13px var(--mono);fill:#eaf7f4}
+.pif{font:500 7.5px var(--mono);fill:#6f9c94}
+#cpuGlow{animation:cg 1s ease-in-out infinite alternate}
+@keyframes cg{from{stroke-opacity:.35}to{stroke-opacity:1}}
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:2px 22px;margin-top:4px}
+.sys div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #15282c;padding:8px 0}
+.sys span{color:#9fc6bf;font:500 13px var(--mono)}
+.sys b{font:700 15px var(--mono);text-align:right}
 /* setup */
 #gear{right:8px;top:22px;z-index:50;width:30px;height:30px;border:0;border-radius:15px;background:rgba(0,0,0,.45);color:#cfe;font-size:16px;line-height:30px;padding:0;opacity:.5}
 #panel{left:110px;top:24px;width:580px;height:432px;z-index:60;background:rgba(5,13,16,.97);border:1px solid #2a5a56;border-radius:10px;
@@ -327,7 +338,7 @@ body.kiosk,body.kiosk *{cursor:none!important}
 
   <button id="gear" title="Setup">⚙</button>
   <div id="panel" hidden>
-    <div class="tabs"><button data-tab="setup" class="on">Setup</button><button data-tab="test">Teste</button><span class="sp"></span><button id="closeP">Fechar</button></div>
+    <div class="tabs"><button data-tab="setup" class="on">Setup</button><button data-tab="sys">Sistema</button><button data-tab="test">Teste</button><span class="sp"></span><button id="closeP">Fechar</button></div>
     <div id="tab-setup">
       <div class="row"><label>Dormir automático</label><div class="grp"><button id="sleepOn"></button></div></div>
       <div class="row"><label>Hora de dormir</label><div class="grp" data-k="sleepStart">
@@ -341,13 +352,28 @@ body.kiosk,body.kiosk *{cursor:none!important}
       <div class="row"><label>Tela cheia</label><div class="grp"><button id="fsBtn">Alternar</button></div></div>
       <div class="note" id="clockNote"></div>
     </div>
+    <div id="tab-sys" hidden>
+      <div class="sys">
+        <div><span>Fonte dos dados</span><b id="sSrc">-</b></div>
+        <div><span>Temperatura</span><b id="sT">-</b></div>
+        <div><span>CPU</span><b id="sC">-</b></div>
+        <div><span>Memória</span><b id="sR">-</b></div>
+        <div><span>Disco</span><b id="sD">-</b></div>
+        <div><span>Carga (1 min)</span><b id="sL">-</b></div>
+        <div><span>Ligado há</span><b id="sU">-</b></div>
+        <div><span>Rede</span><b id="sI">-</b></div>
+        <div><span>Energia</span><b id="sP">-</b></div>
+        <div><span>Cooler</span><b id="sF">-</b></div>
+      </div>
+      <div class="note" style="margin-top:8px">Verde = dados reais do Pi. Amarelo = simulado. Vermelho = servidor local fora do ar.</div>
+    </div>
     <div id="tab-test" hidden>
       <div class="grid">
         <button data-a="cold">Frio</button><button data-a="hot">Calor</button><button data-a="mild">Ameno</button><button data-a="rain">Chuva</button>
         <button data-a="sun">Sem chuva</button><button data-a="night">Dormir</button><button data-a="day">Acordar</button><button data-a="auto">Horário real</button>
         <button data-a="ibovUp">Bolsa ▲</button><button data-a="ibovDown">Bolsa ▼</button><button data-a="usdUp">Dólar ▲</button><button data-a="usdDown">Dólar ▼</button>
         <button data-a="crane">Guindaste</button><button data-a="glitch">Glitch</button><button data-a="heat">Superaquec.</button><button data-a="short">Curto</button>
-        <button data-a="bsod">Tela azul</button><button data-a="bug">Bug</button>
+        <button data-a="bsod">Tela azul</button><button data-a="bug">Bug</button><button data-a="piHot">Pi quente</button><button data-a="piOk">Pi normal</button>
       </div>
     </div>
   </div>
@@ -384,7 +410,7 @@ const IBOV0=128450, USD0=5.42;
 const D={tOut:24,cond:'sol',rain:10,tmax:28,tmin:17,ibovPct:0.4,usdPct:-0.2,tRoom:23.4,hum:58,press:1012};
 D.ibov=IBOV0*(1+D.ibovPct/100); D.usd=USD0*(1+D.usdPct/100);
 const force={night:null,room:null};
-const S={cold:false,hot:false,rain:false,night:false,nightness:0};
+const S={cold:false,hot:false,piHot:false,rain:false,night:false,nightness:0};
 const fan={on:false};
 
 function inSleepWindow(d){
@@ -510,6 +536,67 @@ async function loadReal(){
 }
 async function loadSensors(){
   try{ const j=await (await fetch(SENSOR_URL)).json(); if(force.room===null&&j.t!=null) D.tRoom=+j.t; if(j.h!=null)D.hum=+j.h; if(j.p!=null)D.press=+j.p; updateState(); renderData(); }catch(e){}
+}
+
+/* ============================ MONITOR DO PI ============================ */
+const STATS_URL=Q.get('stats')||(location.protocol.indexOf('http')===0?'/api/stats':null);   // servido por stats_server.py
+const PI={src:'off',t:null,cpu:null,ram:null,ramUsed:null,ramTot:null,disk:null,up:null,load:null,ip:'',host:'',thr:0};
+let forcePi=null; const cpuHist=[];
+function simPi(){
+  PI.src='sim'; PI.t=clamp((PI.t==null?48:PI.t)+rand(-1.2,1.2),42,62); PI.cpu=clamp((PI.cpu==null?20:PI.cpu)+rand(-12,12),3,85);
+  PI.ram=clamp((PI.ram==null?38:PI.ram)+rand(-1.5,1.5),25,70); PI.ramTot=3800; PI.ramUsed=PI.ram/100*3800;
+  PI.disk=42; PI.up=(PI.up||86400)+2; PI.load=PI.cpu/25; PI.ip='simulado'; PI.host='—'; PI.thr=0;
+}
+async function pollPi(){
+  if(!STATS_URL) simPi();
+  else{
+    try{
+      const r=await fetch(STATS_URL,{cache:'no-store'}), j=await r.json();
+      if(j.temp==null&&j.cpu==null) throw new Error('sem dados');
+      PI.src=j.sim?'sim':'live'; PI.t=j.temp; PI.cpu=j.cpu; PI.ram=j.ram_pct; PI.ramUsed=j.ram_used_mb; PI.ramTot=j.ram_total_mb;
+      PI.disk=j.disk_pct; PI.up=j.uptime_s; PI.load=j.load1; PI.ip=j.ip||''; PI.host=j.host||''; PI.thr=j.throttled||0;
+    }catch(e){ PI.src='off'; }
+  }
+  if(forcePi!=null){ PI.t=forcePi; if(PI.src==='off') PI.src='sim'; }
+  if(PI.cpu!=null&&PI.src!=='off'){ cpuHist.push(PI.cpu); if(cpuHist.length>60) cpuHist.shift(); }
+  piState(); renderPi();
+}
+function piState(){
+  if(PI.t==null||PI.src==='off'){ S.piHot=false; return; }   // sem leitura, não segura o cooler ligado
+  if(!S.piHot&&PI.t>=70) S.piHot=true; else if(S.piHot&&PI.t<=62) S.piHot=false;   // histerese: liga a 70°C, desliga a 62°C
+}
+const lvl=(v,a,b)=>v>=b?'#ff6b5e':v>=a?'#ffc857':'#5cf5d2';
+const fmtUp=s=>{ if(s==null) return '-'; const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60); return d?`${d}d ${h}h`:`${h}h ${m}m`; };
+const gb=mb=>(mb/1024).toFixed(1);
+function thrText(v){
+  const a=[]; if(v&1) a.push('sub-tensão agora'); if(v&4) a.push('CPU limitada agora'); if(v&8) a.push('limite de temperatura');
+  if(!a.length&&(v&0x50000)) a.push('já houve sub-tensão/limite');
+  return a.length?a.join(', '):'ok';
+}
+function renderPi(){
+  const ok=PI.src!=='off', hasT=ok&&PI.t!=null;
+  $('piDot').setAttribute('fill',PI.src==='live'?'#37d67a':PI.src==='sim'?'#ffc857':'#ff4a3a');
+  const row=(k,v,pct,a,b,txt)=>{ const bar=$('bar'+k); if(!ok||v==null){ bar.setAttribute('width',0); $('pi'+k).textContent='--'; return; }
+    bar.setAttribute('width',(70*clamp(pct,0,1)).toFixed(1)); bar.setAttribute('fill',lvl(v,a,b)); $('pi'+k).textContent=txt; };
+  row('T',PI.t,(PI.t-30)/55,65,78,`${Math.round(PI.t)}°C`);
+  row('C',PI.cpu,(PI.cpu||0)/100,70,90,`${Math.round(PI.cpu)}%`);
+  row('R',PI.ram,(PI.ram||0)/100,75,90,`${Math.round(PI.ram)}%`);
+  $('piF').textContent=ok?`${fmtUp(PI.up)} · ${gb(PI.ramUsed)}/${gb(PI.ramTot)} GB`:'sem dados — servidor offline?';
+  const g=$('cpuGlow'); g.setAttribute('opacity',hasT&&PI.t>=70?1:0); g.setAttribute('stroke',PI.t>=78?'#ff5a3c':'#ffc857');
+  if(cpuHist.length>1){ const st=148/59, x0=326+(60-cpuHist.length)*st;
+    $('piSpark').setAttribute('d','M'+cpuHist.map((v,i)=>`${(x0+i*st).toFixed(1)},${(85-clamp(v,0,100)/100*18).toFixed(1)}`).join(' L')); }
+  if(!$('tab-sys').hidden){
+    $('sSrc').textContent=PI.src==='live'?'ao vivo':PI.src==='sim'?'simulado':'sem conexão'; $('sSrc').style.color=PI.src==='live'?'#37d67a':PI.src==='sim'?'#ffc857':'#ff6b5e';
+    $('sT').textContent=hasT?`${PI.t.toFixed(1)} °C`:'sem sensor'; $('sT').style.color=hasT?lvl(PI.t,65,78):'';
+    $('sC').textContent=ok&&PI.cpu!=null?`${PI.cpu.toFixed(0)} %`:'-';
+    $('sR').textContent=ok&&PI.ram!=null?`${gb(PI.ramUsed)} / ${gb(PI.ramTot)} GB (${PI.ram.toFixed(0)}%)`:'-';
+    $('sD').textContent=ok&&PI.disk!=null?`${PI.disk.toFixed(0)} % usado`:'-';
+    $('sL').textContent=ok&&PI.load!=null?PI.load.toFixed(2):'-';
+    $('sU').textContent=ok?fmtUp(PI.up):'-';
+    $('sI').textContent=ok?(PI.ip+(PI.host&&PI.host!=='—'?` · ${PI.host}`:'')):'-';
+    $('sP').textContent=ok?thrText(PI.thr):'-'; $('sP').style.color=ok&&PI.thr&5?'#ff6b5e':'';
+    $('sF').textContent=fan.on?'ligado':'desligado';
+  }
 }
 
 /* ============================ PLATAFORMAS ============================ */
@@ -691,9 +778,9 @@ function* signalCrane(){            // o bot abre o notebook e comanda o guindas
     yield* wait(2200); crane.req=true; yield* wait(700); yield* packGear(); bot.pose='idle';
   } finally { endGear(); }
 }
-function* fanRoutine(on){
+function* fanRoutine(on,why){
   if(!(yield* goTo('G',738))) return;
-  bot.face=1; bot.pose='press'; say(on?'Ufa! Ligando o cooler':'Já deu uma refrescada',2800);
+  bot.face=1; bot.pose='press'; say(on?(why==='pi'?'O Pi está esquentando! Ligando o cooler':'Ufa! Ligando o cooler'):'Já deu uma refrescada',2800);
   yield* wait(750); setFan(on); bot.pose='idle'; setMood(on?'happy':'neutral',2500); yield* wait(on?5000:800);
 }
 function* warmRoutine(){
@@ -733,8 +820,9 @@ function* think(){
   if(isRiding()){ yield* wait(400); return; }
   const bad=cards.find(c=>c.defect&&!c.fixing&&c.mode!=='carried');
   if(bad) return yield* fixCard(bad);
-  if(S.hot&&!fan.on) return yield* fanRoutine(true);
-  if(!S.hot&&fan.on) return yield* fanRoutine(false);
+  const wantFan=S.hot||S.piHot;
+  if(wantFan&&!fan.on) return yield* fanRoutine(true,S.piHot&&!S.hot?'pi':'sala');
+  if(!wantFan&&fan.on) return yield* fanRoutine(false);
   if(reactions.length) return yield* react(reactions.shift());
   if(S.cold&&Math.random()<.35) return yield* warmRoutine();
   const chk=cards.filter(c=>c.check&&!c.defect);
@@ -991,11 +1079,18 @@ function updateBoard(){
    <rect width="800" height="480" fill="url(#bg)"/><rect width="800" height="480" fill="url(#dots)"/>`;
   T.forEach(d=>{ h+=`<path class="tr" d="${d}"/>`; });
   /* CPU */
-  h+=`<rect x="300" y="36" width="200" height="140" rx="10" fill="#14232a" stroke="#2c5456" stroke-width="2"/>
-      <rect x="320" y="50" width="160" height="112" rx="8" fill="#0d181d" stroke="#3b6b69"/>
-      <rect x="338" y="66" width="124" height="80" rx="5" fill="#101f25" stroke="#244b4d"/>
-      <text x="400" y="114" text-anchor="middle" font-family="monospace" font-size="22" font-weight="700" fill="#2f5d5a">R-BOT</text>
-      <text x="400" y="132" text-anchor="middle" font-family="monospace" font-size="9" fill="#2f5d5a">CORE i7 · 5500</text>
+  h+=`<rect id="cpuGlow" x="296" y="32" width="208" height="148" rx="12" fill="none" stroke="#ff5a3c" stroke-width="3" opacity="0"/>
+      <rect x="300" y="36" width="200" height="140" rx="10" fill="#14232a" stroke="#2c5456" stroke-width="2"/>
+      <rect x="316" y="46" width="168" height="120" rx="8" fill="#0b151a" stroke="#3b6b69"/>
+      <text class="pit" x="326" y="60">PI 4 · BCM2711</text>
+      <circle id="piDot" cx="474" cy="57" r="3" fill="#ffc857"/>
+      <rect x="326" y="66" width="148" height="20" rx="3" fill="#0f1d23"/>
+      <path id="piSpark" d="" fill="none" stroke="#5cf5d2" stroke-width="1.5" stroke-linejoin="round"/>`;
+  [['T','TEMP',104],['C','CPU',124],['R','RAM',144]].forEach(([k,l,y])=>{
+    h+=`<text class="pil" x="326" y="${y}">${l}</text><rect x="360" y="${y-8}" width="70" height="8" rx="2" fill="#16282e"/>
+        <rect id="bar${k}" x="360" y="${y-8}" width="0" height="8" rx="2" fill="#5cf5d2"/>
+        <text id="pi${k}" class="piv" x="474" y="${y}" text-anchor="end">--</text>`; });
+  h+=`<text id="piF" class="pif" x="400" y="160" text-anchor="middle">aguardando dados…</text>
       <path d="M300 36 l14 0 l-14 14z" fill="#c9a24a"/>`;
   /* chokes */
   [[130,40],[188,40]].forEach(([x,y],i)=>{ h+=`<rect x="${x}" y="${y}" width="46" height="42" rx="7" fill="#182a2e" stroke="#2f5555"/><path d="M${x+10} ${y+21} q6 -12 12 0 t12 0" fill="none" stroke="#6f9c94" stroke-width="2"/><text class="silk" x="${x+6}" y="${y+36}">L${i+1}</text>`; });
@@ -1074,7 +1169,7 @@ $('gear').addEventListener('click',()=>{ $('panel').hidden=!$('panel').hidden; r
 $('closeP').addEventListener('click',()=>{ $('panel').hidden=true; });
 document.querySelectorAll('#panel [data-tab]').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#panel [data-tab]').forEach(x=>x.classList.toggle('on',x===b));
-  $('tab-setup').hidden=b.dataset.tab!=='setup'; $('tab-test').hidden=b.dataset.tab!=='test';
+  ['setup','sys','test'].forEach(k=>{ $('tab-'+k).hidden=b.dataset.tab!==k; }); renderPi();
 }));
 addEventListener('keydown',e=>{ if(e.key==='d'||e.key==='D'){ $('panel').hidden=!$('panel').hidden; renderSetup(); } if(e.key==='f'||e.key==='F') goFull(); });
 const act={
@@ -1084,11 +1179,12 @@ const act={
   ibovUp(){lastIb=0;D.ibovPct=1.8;D.ibov=IBOV0*(1+D.ibovPct/100);}, ibovDown(){lastIb=0;D.ibovPct=-1.9;D.ibov=IBOV0*(1+D.ibovPct/100);},
   usdUp(){lastUs=0;D.usdPct=1.6;D.usd=USD0*(1+D.usdPct/100);}, usdDown(){lastUs=0;D.usdPct=-1.4;D.usd=USD0*(1+D.usdPct/100);},
   crane(){crane.req=true;},
+  piHot(){forcePi=78;PI.t=78;if(PI.src==='off')PI.src='sim';}, piOk(){forcePi=null;},
   glitch(){spawnDefect('glitch');}, heat(){spawnDefect('heat');}, short(){spawnDefect('short');}, bsod(){spawnDefect('bsod');}, bug(){spawnDefect('bug');}
 };
 $('tab-test').addEventListener('click',e=>{
   const a=e.target.dataset&&e.target.dataset.a; if(!a||!act[a]) return;
-  act[a](); updateState(); renderData(); marketEvents();
+  act[a](); updateState(); renderData(); marketEvents(); piState(); renderPi();
 });
 
 /* ============================ LOOP ============================ */
@@ -1109,11 +1205,12 @@ function frame(ts){
 }
 updateState(); S.nightness=S.night?1:0; renderClock(); renderData(); renderSetup(); updateBoard(); resetDefectTimer(true);
 setTask(think(),'think');
+pollPi(); setInterval(pollPi,2000);
 if(REAL){ loadReal(); setInterval(loadReal,10*60*1000); }
 if(SENSOR_URL){ loadSensors(); setInterval(loadSensors,10000); }
 requestAnimationFrame(frame);
 
-window.__rebite={step,bot,crane,cards,cols,S,D,force,fan,act,nodes,layoutOK,setTask,reactions,isTop,cfg,WK,P,spawnDefect,updateState};
+window.__rebite={PI,pollPi,renderPi,step,bot,crane,cards,cols,S,D,force,fan,act,nodes,layoutOK,setTask,reactions,isTop,cfg,WK,P,spawnDefect,updateState};
 })();
 </script>
 </body>
