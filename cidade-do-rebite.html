@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cidade do Rebite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--mono:'JetBrains Mono','DejaVu Sans Mono','Liberation Mono',monospace;--disp:'Chakra Petch','Arial Narrow','DejaVu Sans Condensed',sans-serif;--gta:'Lilita One',Impact,'Arial Black',sans-serif;--OL:#14061f}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#02010a;overflow:hidden}
+body.kiosk,body.kiosk *{cursor:none!important}
+#stage{position:absolute;left:50%;top:50%;width:800px;height:480px;margin:-240px 0 0 -400px;transform-origin:50% 50%;overflow:hidden;
+  background:#14083a;font-family:var(--mono);user-select:none;-webkit-user-select:none;touch-action:none;--lt:0;--tdc:rgba(255,110,70,.3);--tnc:rgba(14,8,60,.62)}
+#stage>*{position:absolute}
+.gt{font-family:var(--gta);font-weight:400;color:#fff;letter-spacing:.03em;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 3px 0 #000}
+
+/* ---------- céu ---------- */
+.sky{left:0;top:0;width:800px;height:480px;transition:opacity 4s linear}
+#stars{left:0;top:0;transition:opacity 4s linear;opacity:0}
+.tw{animation:tw 3s ease-in-out infinite alternate}
+@keyframes tw{from{opacity:.25}to{opacity:1}}
+#sunDay,#sunDusk,#moon,#trail{transition:opacity 4s linear;opacity:0}
+#haze{left:0;top:150px;width:800px;height:260px;background:linear-gradient(180deg,rgba(255,226,238,0),rgba(255,226,238,.8));opacity:0;transition:opacity 4s linear;pointer-events:none}
+
+/* ---------- camadas ---------- */
+.strip{left:0;top:0;height:480px;will-change:transform;animation:scroll var(--D) linear infinite;pointer-events:none}
+@keyframes scroll{to{transform:translate3d(calc(var(--T) * -1),0,0)}}
+.strip svg{position:absolute;left:0;top:0;overflow:visible}
+.strip svg.tint{transition:opacity 4s linear;opacity:0}
+.strip svg.tD{fill:var(--tdc)}.strip svg.tN{fill:var(--tnc)}.strip svg.tY{fill:var(--tyc)}
+.lights{transition:opacity 4s linear}
+#clouds{z-index:3}#far{z-index:4}#haze{z-index:5}#mid{z-index:6}#bill{z-index:8}#walk{z-index:9}#peds{z-index:10;left:0;top:0}#fg{z-index:16}
+
+/* ---------- outdoors (estilo pôster) ---------- */
+.bb{position:absolute;width:208px;height:112px}
+.bbf{position:absolute;inset:0;border-radius:5px;background:var(--bg);box-shadow:0 0 0 3px var(--OL),inset 0 0 0 3px #fff;overflow:hidden}
+.bbf::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.16) 0 9px,transparent 9px 18px)}
+.bb::after{content:"";position:absolute;inset:-5px;border-radius:9px;box-shadow:0 0 22px 7px var(--ag);opacity:var(--lt);pointer-events:none}
+.bbs{position:absolute;left:11px;right:11px;top:9px;bottom:8px}
+.l{position:absolute;left:-3px;top:-3px;background:var(--OL);color:#fff;padding:3px 8px 2px;font:400 13px/1 var(--gta);letter-spacing:.05em;border-radius:3px 3px 8px 0}
+.v{position:absolute;left:0;top:19px;white-space:nowrap;font:400 46px/1 var(--gta);color:#fff;letter-spacing:.02em;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 3px 0 #000}
+.s{position:absolute;left:0;bottom:0;white-space:nowrap;font:700 12px/1 var(--mono);color:var(--OL);background:rgba(255,255,255,.92);padding:3px 7px;border-radius:3px}
+.up{color:#0c8a3c}.down{color:#d4162a}
+.ico{position:absolute;right:-2px;top:20px;width:40px;height:40px}
+.ico svg{width:40px;height:40px;display:none;filter:drop-shadow(0 0 0 #000)}
+.ico.sol .s-sol,.ico.nublado .s-nub,.ico.chuva .s-chu{display:block}
+.colon{animation:cb 1s steps(1) infinite}
+@keyframes cb{50%{opacity:.3}}
+.sp{position:absolute;top:-13px;width:9px;height:7px;border-radius:2px;background:#cfd2e0;box-shadow:0 0 0 1.5px var(--OL)}
+.sp.s1{left:34px}.sp.s2{right:34px}
+.sp::after{content:"";position:absolute;left:50%;top:6px;margin-left:-26px;width:52px;height:46px;background:linear-gradient(180deg,rgba(255,244,200,.38),rgba(255,244,200,0));clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);opacity:var(--lt)}
+.bb.alert .bbf{animation:al .55s steps(2) infinite}
+@keyframes al{50%{filter:brightness(1.5) hue-rotate(-30deg)}}
+.pr{position:relative;height:21px;margin-top:2px}
+.pr b{position:absolute;left:0;top:4px;font:400 12px/1 var(--gta);color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+.pr i{position:absolute;left:40px;top:4px;width:74px;height:11px;border-radius:2px;background:#000;border:2px solid #000;overflow:hidden}
+.pr i u{display:block;height:100%;width:0;background:#37d67a;transition:width .6s}
+.pr em{position:absolute;right:0;top:0;font:400 17px/1 var(--gta);font-style:normal;color:#fff;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000}
+
+/* ---------- rua, trânsito, aeronaves ---------- */
+#road{left:0;top:392px;width:800px;height:66px;z-index:11;background:linear-gradient(180deg,#3a3550 0,#2a2640 100%);border-top:3px solid var(--OL);overflow:hidden}
+#road .dash{position:absolute;left:0;top:36px;width:1680px;height:3px;background:repeating-linear-gradient(90deg,#f1dc72 0 36px,transparent 36px 80px);animation:dash 1.1s linear infinite;will-change:transform}
+@keyframes dash{to{transform:translate3d(-80px,0,0)}}
+#road .edge{position:absolute;left:0;right:0;bottom:3px;height:2px;background:rgba(255,255,255,.22)}
+#road::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,150,210,0),rgba(255,150,210,.28));opacity:0;transition:opacity 3s}
+#stage.wet #road::after{opacity:1}
+#trafficFar,#trafficNear,#air{left:0;top:0}
+#trafficFar{z-index:12}#trafficNear{z-index:13}#air{z-index:14}
+.mv{position:absolute;left:0;top:0;will-change:transform;animation:move var(--D) linear forwards;pointer-events:none}
+@keyframes move{from{transform:translate3d(var(--x0),0,0)}to{transform:translate3d(var(--x1),0,0)}}
+.car{position:absolute;left:0;top:0;overflow:visible}
+.car.flip{transform:scaleX(-1)}
+.car.lowr{animation:lowr .55s steps(2) infinite}
+@keyframes lowr{0%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.car.flip.lowr{animation:lowrf .55s steps(2) infinite}
+@keyframes lowrf{0%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-3px)}}
+.spin{animation:spin .28s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.beam,.ug{opacity:var(--lt)}
+.sR{animation:sirA .32s steps(1) infinite}.sB{animation:sirB .32s steps(1) infinite}
+@keyframes sirA{0%{opacity:1}50%{opacity:.1}}
+@keyframes sirB{0%{opacity:.1}50%{opacity:1}}
+.banner{position:absolute;left:0;top:10px;height:22px;border-radius:3px;background:#fff;border:2.5px solid var(--OL);color:var(--OL);
+  font:700 12px/17px var(--mono);text-align:center;white-space:nowrap;overflow:hidden}
+.rope{position:absolute;top:21px;height:2px;background:var(--OL)}
+.nav{animation:nv 1s steps(1) infinite}
+@keyframes nv{50%{opacity:.15}}
+.rot{animation:rt .12s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes rt{50%{transform:scaleX(.35)}}
+.bob{animation:bob 3s ease-in-out infinite alternate}
+@keyframes bob{from{transform:translateY(-3px)}to{transform:translateY(4px)}}
+.led{position:absolute;color:#fff;font:400 12px var(--gta);white-space:nowrap;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+.ped{position:absolute;left:0;top:0;overflow:visible}
+.ped .lg{animation:wk .56s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 5%}
+.ped .lg.b{animation-direction:alternate-reverse}
+.ped .ar{animation:wk .56s ease-in-out infinite alternate-reverse;transform-box:fill-box;transform-origin:50% 8%}
+@keyframes wk{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+
+/* ---------- HUD estilo GTA ---------- */
+#hud{right:10px;top:6px;z-index:35;width:200px;text-align:right;pointer-events:none}
+#hClock{font-size:32px;line-height:1}
+#hMoney{font-size:26px;line-height:1.05;color:#79d14a;margin-top:2px}
+#hMoney.chg{animation:mchg .8s steps(2)}
+@keyframes mchg{50%{color:#fff}}
+.hb{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:5px}
+.hb svg{width:15px;height:15px;filter:drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000)}
+.bar{width:112px;height:12px;background:rgba(0,0,0,.65);border:2.5px solid #000;overflow:hidden}
+.bar u{display:block;height:100%;width:100%;transition:width .6s}
+#hHp u{background:#d8232a}#hAr u{background:#d6d9e0}
+#hHp.low{animation:lowhp .5s steps(2) infinite}
+@keyframes lowhp{50%{opacity:.35}}
+#hStars{margin-top:4px;font:400 21px/1 var(--gta);letter-spacing:1px;text-shadow:-1.5px -1.5px 0 #000,1.5px -1.5px 0 #000,-1.5px 1.5px 0 #000,1.5px 1.5px 0 #000}
+#hStars b{font-weight:400;color:rgba(255,255,255,.22)}
+#hStars b.on{color:#ffd23f}
+#hStars.flash b.on{animation:stf .5s steps(2) infinite}
+@keyframes stf{50%{color:#fff}}
+#radar{left:8px;top:356px;z-index:35;width:96px;height:96px;pointer-events:none}
+@keyframes rmap{to{transform:rotate(360deg)}}
+@keyframes rpulse{50%{opacity:.25}}
+#zone{right:12px;top:418px;z-index:35;font-size:30px;opacity:0;pointer-events:none;text-align:right}
+#zone.show{animation:zn 6s forwards}
+@keyframes zn{0%{opacity:0;transform:translateX(40px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#mission{left:0;right:0;top:118px;z-index:36;text-align:center;opacity:0;pointer-events:none}
+#mission b{display:block;font:400 48px/1 var(--gta);color:#f5c518;letter-spacing:.04em;text-shadow:-3px -3px 0 #000,3px -3px 0 #000,-3px 3px 0 #000,3px 3px 0 #000,0 4px 0 #000}
+#mission.fail b{color:#e0252b}
+#mission i{display:block;margin-top:5px;font:400 22px/1 var(--gta);font-style:normal;color:#fff;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000}
+#mission.show{animation:mis 6s forwards}
+@keyframes mis{0%{opacity:0;transform:scale(1.5)}7%{opacity:1;transform:scale(1)}86%{opacity:1}100%{opacity:0}}
+#wasted{inset:0;z-index:38;background:rgba(40,40,46,.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#wasted b{font:400 78px/1 var(--gta);color:#c4121a;letter-spacing:.06em;text-shadow:-3px -3px 0 #000,3px -3px 0 #000,-3px 3px 0 #000,3px 3px 0 #000,0 5px 0 #000}
+#wasted.show{animation:was 6s forwards}
+@keyframes was{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+#ticker{left:104px;top:458px;width:696px;height:22px;z-index:35;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 8px;
+  background:rgba(8,3,20,.9);border-top:2px solid var(--OL);font:700 11.5px/1 var(--mono);color:#efe9ff;white-space:nowrap}
+#ticker .k{color:#ffd23f}
+#ticker .sep{width:1px;height:12px;background:#4a3a6a}
+#dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffc857;margin-right:5px}
+#tkbg{left:0;top:458px;width:104px;height:22px;z-index:34;background:rgba(8,3,20,.9);border-top:2px solid var(--OL)}
+
+#rain{left:0;top:0;z-index:30;pointer-events:none}
+#rainTint{inset:0;z-index:29;background:rgba(36,48,86,.3);opacity:0;transition:opacity 3s;pointer-events:none}
+#flash{inset:0;z-index:31;background:#fff;opacity:0;pointer-events:none}
+#flash.on{animation:fl .7s ease-out}
+@keyframes fl{0%{opacity:.85}10%{opacity:.2}20%{opacity:.7}100%{opacity:0}}
+#dim{inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity 4s linear}
+
+/* ---------- setup ---------- */
+#gear{left:8px;top:8px;z-index:50;width:30px;height:30px;border:0;border-radius:15px;background:rgba(0,0,0,.5);color:#fff;font-size:16px;line-height:30px;padding:0;opacity:.4}
+#panel{left:110px;top:24px;width:580px;height:432px;z-index:60;background:rgba(8,4,24,.97);border:1px solid #6a3aa6;border-radius:10px;
+  padding:12px 14px;display:flex;flex-direction:column;gap:7px;color:#efeaff;font:600 15px var(--disp)}
+#panel[hidden]{display:none}
+#panel button{font:600 14px var(--disp);color:#efeaff;background:#241846;border:1px solid #4a3a86;border-radius:6px;min-height:36px;padding:0 12px}
+#panel button:active{background:#4a3a86}
+#panel button.on{background:#7a2a8e;border-color:#ff6ac8}
+#panel .tabs{display:flex;gap:6px}
+#panel .sp1{flex:1}
+#panel .row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;border-bottom:1px solid #261a4a;padding-bottom:4px}
+#panel .row label{font-size:15px;color:#cfc0ff}
+#panel .grp{display:flex;gap:5px;align-items:center}
+#panel .tv{min-width:34px;text-align:center;font:700 22px var(--mono)}
+#panel .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#panel .note{font:500 11px var(--mono);color:#9a88d8}
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:2px 22px;margin-top:4px}
+.sys div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #261a4a;padding:7px 0}
+.sys span{color:#b7a8ee;font:500 13px var(--mono)}
+.sys b{font:700 15px var(--mono);text-align:right}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="skyNight" class="sky" style="opacity:1"></div>
+  <div id="skyDusk" class="sky" style="opacity:0"></div>
+  <div id="skyDay" class="sky" style="opacity:0"></div>
+  <svg id="stars" width="800" height="270" viewBox="0 0 800 270" style="z-index:1"></svg>
+  <svg id="sunDay" width="120" height="120" viewBox="0 0 120 120" style="z-index:2;left:560px;top:10px"><defs><radialGradient id="sdg"><stop offset="0" stop-color="#fffbd0"/><stop offset=".42" stop-color="#ffe46a"/><stop offset="1" stop-color="#ffe46a" stop-opacity="0"/></radialGradient></defs><circle cx="60" cy="60" r="58" fill="url(#sdg)"/><circle cx="60" cy="60" r="21" fill="#fff6a8" stroke="#14061f" stroke-width="2"/></svg>
+  <svg id="sunDusk" width="220" height="150" viewBox="0 0 220 150" style="z-index:2;left:190px;top:156px"><defs><linearGradient id="sug" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#ffb35c"/><stop offset="1" stop-color="#ff4f9a"/></linearGradient><mask id="sum"><rect width="220" height="150" fill="#fff"/><rect x="0" y="86" width="220" height="3" fill="#000"/><rect x="0" y="97" width="220" height="4.5" fill="#000"/><rect x="0" y="109" width="220" height="6" fill="#000"/><rect x="0" y="122" width="220" height="8" fill="#000"/></mask></defs><circle cx="110" cy="78" r="70" fill="url(#sug)" mask="url(#sum)"/></svg>
+  <svg id="trail" width="220" height="70" viewBox="0 0 220 70" style="z-index:2;left:190px;top:272px"><g fill="#ffd27a"><rect x="60" y="2" width="100" height="3" rx="1.5" opacity=".8"/><rect x="40" y="10" width="140" height="3" rx="1.5" opacity=".65"/><rect x="70" y="19" width="80" height="3.5" rx="1.7" opacity=".6"/><rect x="30" y="29" width="160" height="4" rx="2" opacity=".5"/><rect x="85" y="41" width="50" height="4" rx="2" opacity=".5"/><rect x="50" y="54" width="120" height="4.5" rx="2" opacity=".4"/></g></svg>
+  <svg id="moon" width="90" height="90" viewBox="0 0 90 90" style="z-index:2;left:100px;top:24px"><defs><radialGradient id="mg"><stop offset=".5" stop-color="#e9efff" stop-opacity=".35"/><stop offset="1" stop-color="#e9efff" stop-opacity="0"/></radialGradient></defs><circle cx="45" cy="45" r="44" fill="url(#mg)"/><circle cx="45" cy="45" r="19" fill="#eef2ff" stroke="#14061f" stroke-width="2"/><circle cx="39" cy="40" r="3.5" fill="#cfd6ee"/><circle cx="51" cy="50" r="4.5" fill="#cfd6ee"/></svg>
+
+  <div id="clouds" class="strip"></div>
+  <div id="far" class="strip"></div>
+  <div id="haze"></div>
+  <div id="mid" class="strip"></div>
+  <div id="bill" class="strip"></div>
+  <div id="walk" class="strip"></div>
+  <div id="peds"></div>
+  <div id="road"><i class="dash"></i><i class="edge"></i></div>
+  <div id="trafficFar"></div>
+  <div id="trafficNear"></div>
+  <div id="air"></div>
+  <div id="fg" class="strip"></div>
+
+  <div id="hud">
+    <div id="hClock" class="gt">--:--</div>
+    <div id="hMoney" class="gt">R$ --</div>
+    <div class="hb"><svg viewBox="0 0 16 16"><path d="M8 14.5C3 10.8 1.5 8.4 1.5 6A3.6 3.6 0 0 1 8 4.2 3.6 3.6 0 0 1 14.5 6C14.5 8.4 13 10.8 8 14.5Z" fill="#d8232a"/></svg><div class="bar" id="hHp"><u></u></div></div>
+    <div class="hb"><svg viewBox="0 0 16 16"><path d="M8 1.5L14 3.5V8C14 11.3 11.6 13.4 8 14.8 4.4 13.4 2 11.3 2 8V3.5Z" fill="#d6d9e0" stroke="#7a8090" stroke-width="1"/></svg><div class="bar" id="hAr"><u></u></div></div>
+    <div id="hStars"></div>
+  </div>
+  <div id="radar"></div>
+  <div id="zone" class="gt"></div>
+  <div id="mission"><b></b><i></i></div>
+  <div id="wasted"><b>WASTED</b></div>
+  <div id="tkbg"></div>
+  <div id="ticker">
+    <span><i id="dot"></i></span>
+    <span data-b="tk.clima">--</span><i class="sep"></i>
+    <span data-b="tk.bolsa">--</span><i class="sep"></i>
+    <span data-b="tk.dolar">--</span><i class="sep"></i>
+    <span data-b="tk.sala">--</span><i class="sep"></i>
+    <span data-b="tk.pi">--</span>
+  </div>
+  <canvas id="rain" width="800" height="480"></canvas>
+  <div id="rainTint"></div>
+  <div id="flash"></div>
+  <div id="dim"></div>
+  <button id="gear" title="Setup">⚙</button>
+  <div id="panel" hidden>
+    <div class="tabs"><button data-tab="setup" class="on">Setup</button><button data-tab="sys">Sistema</button><button data-tab="test">Teste</button><span class="sp1"></span><button id="closeP">Fechar</button></div>
+    <div id="tab-setup">
+      <div class="row"><label>Estilo da cidade</label><div class="grp" id="themeGrp"><button data-theme="vice">Vice City</button><button data-theme="sa">San Andreas</button></div></div>
+      <div class="row"><label>Escurecer para dormir</label><div class="grp"><button id="sleepOn"></button></div></div>
+      <div class="row"><label>Hora de dormir</label><div class="grp" data-k="sleepStart"><button data-u="h" data-d="-1">−</button><span class="tv hh"></span><button data-u="h" data-d="1">+</button><span class="tv">:</span><button data-u="m" data-d="-5">−</button><span class="tv mm"></span><button data-u="m" data-d="5">+</button></div></div>
+      <div class="row"><label>Hora de acordar</label><div class="grp" data-k="sleepEnd"><button data-u="h" data-d="-1">−</button><span class="tv hh"></span><button data-u="h" data-d="1">+</button><span class="tv">:</span><button data-u="m" data-d="-5">−</button><span class="tv mm"></span><button data-u="m" data-d="5">+</button></div></div>
+      <div class="row"><label>Ritmo da cidade</label><div class="grp" id="paceGrp"><button data-pace="0.6">Calmo</button><button data-pace="1">Normal</button><button data-pace="1.6">Agitado</button></div></div>
+      <div class="row"><label>Horário do cenário</label><div class="grp" id="todGrp"><button data-tod="auto">Auto</button><button data-tod="day">Dia</button><button data-tod="dusk">Entardecer</button><button data-tod="night">Noite</button></div></div>
+      <div class="row"><label>Tela cheia</label><div class="grp"><button id="fsBtn">Alternar</button></div></div>
+      <div class="note" id="clockNote"></div>
+    </div>
+    <div id="tab-sys" hidden>
+      <div class="sys">
+        <div><span>Fonte dos dados</span><b id="sSrc">-</b></div><div><span>Temperatura</span><b id="sT">-</b></div>
+        <div><span>CPU</span><b id="sC">-</b></div><div><span>Memória</span><b id="sR">-</b></div>
+        <div><span>Disco</span><b id="sD">-</b></div><div><span>Carga (1 min)</span><b id="sL">-</b></div>
+        <div><span>Ligado há</span><b id="sU">-</b></div><div><span>Rede</span><b id="sI">-</b></div>
+        <div><span>Energia</span><b id="sP">-</b></div><div><span>Estrelas de procurado</span><b id="sW">-</b></div>
+      </div>
+      <div class="note" style="margin-top:8px">HUD: dinheiro = dólar · coração = saúde do Pi (cai com a temperatura: cheio até 45 °C, vazio em 85 °C) · colete = memória livre · estrelas = alertas (dólar disparou +1, Pi quente +2, CPU acima de 90% +1, temperatura acima de 80 °C +1). Verde = dado real; amarelo = simulado; vermelho = servidor fora do ar.</div>
+    </div>
+    <div id="tab-test" hidden>
+      <div class="grid">
+        <button data-a="rain">Chuva</button><button data-a="sun">Sem chuva</button><button data-a="ibovUp">Bolsa ▲</button><button data-a="ibovDown">Bolsa ▼</button>
+        <button data-a="usdUp">Dólar ▲</button><button data-a="usdDown">Dólar ▼</button><button data-a="piHot">Pi quente</button><button data-a="piOk">Pi normal</button>
+        <button data-a="plane">Avião</button><button data-a="jet">Jato</button><button data-a="blimp">Dirigível</button><button data-a="heli">Helicóptero</button>
+        <button data-a="chase">Perseguição</button><button data-a="wanted">Procurado ★★★</button><button data-a="lightning">Raio</button><button data-a="zone">Nome do bairro</button>
+        <button data-a="passed">Missão ok</button><button data-a="failed">Missão falhou</button><button data-a="wasted">Wasted</button><button data-a="lowrider">Lowrider</button>
+      </div>
+    </div>
+  </div>
+  <svg width="0" height="0" style="position:absolute"><defs>
+    <linearGradient id="beamG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff2b0" stop-opacity=".6"/><stop offset="1" stop-color="#fff2b0" stop-opacity="0"/></linearGradient>
+    <radialGradient id="lampG"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".75"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="searchG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe0" stop-opacity=".5"/><stop offset="1" stop-color="#fffbe0" stop-opacity="0"/></linearGradient>
+  </defs></svg>
+</div>
+
+<script>
+(()=>{
+'use strict';
+/* ============================ CONFIG ============================ */
+const W=800,H=480,ROAD=392,OL='#14061f';
+const Q=new URLSearchParams(location.search);
+const REAL=Q.has('real'), KIOSK=Q.has('kiosk'), SENSOR_URL=Q.get('sensors');
+const STATS_URL=Q.get('stats')||(location.protocol.indexOf('http')===0?'/api/stats':null);
+const LAT=-21.76, LON=-43.35;
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rng=seed=>{let s=seed;return()=>(s=(s*16807)%2147483647)/2147483647;};
+const hexRGB=c=>[1,3,5].map(i=>parseInt(c.substr(i,2),16));
+const toHex=a=>'#'+a.map(v=>clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');
+const shade=(c,f)=>toHex(hexRGB(c).map(v=>v*f));
+const stage=$('stage');
+if(KIOSK) document.body.classList.add('kiosk');
+
+const CFG_KEY='rebite.city.v2';
+const cfg=Object.assign({theme:'vice',sleepOn:true,sleepStart:22*60,sleepEnd:6*60,pace:1,tod:'auto'},(()=>{try{return JSON.parse(localStorage.getItem(CFG_KEY))||{};}catch(e){return {};}})());
+if(Q.get('theme')) cfg.theme=Q.get('theme');
+const saveCfg=()=>{ try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg));}catch(e){} };
+
+/* ============================ ESTILOS (Vice City / San Andreas) ============================ */
+const THEMES={
+ vice:{
+  sky:{night:'linear-gradient(180deg,#05031c 0,#160c4a 110px,#3a1a7a 210px,#8a2a8a 262px,#c43a8e 270px,#1c1050 271px,#120a38 480px)',
+       dusk:'linear-gradient(180deg,#1b0a45 0,#4a1a80 90px,#a8309a 170px,#ff4f9a 225px,#ff8a5a 255px,#ffd27a 270px,#6a2a8a 271px,#3a1a6a 330px,#241050 480px)',
+       day:'linear-gradient(180deg,#27a8ff 0,#6fd0ff 120px,#b8f0ff 205px,#ffd9ee 262px,#ffe8f4 270px,#2fb3d8 271px,#1a86b8 480px)'},
+  tdc:'rgba(255,90,140,.30)', tnc:'rgba(18,8,70,.64)', tyc:'rgba(0,0,0,0)', haze:'linear-gradient(180deg,rgba(255,226,238,0),rgba(255,226,238,.8))',
+  far:{top:'#c8aef0',bot:'#a58ad8'},
+  pal:['#ffb3d1','#a8f0dc','#ffd3a8','#fff1ec','#d4bcff','#9fe4ff','#ffe58a'],
+  billPal:['#ffc1da','#b4f5e4','#ffdcb8','#fff6f0','#dcc8ff'],
+  glass:['#7a9af0','#3e56b8'], accent:['#ff5fa8','#2fe0d0','#ffb23f'],
+  neon:['#ff4fa3','#2de2e6','#ff9a3c','#9b5cff','#ffd23f'],
+  kinds:{deco:.6,tower:.24,lowrise:.16},
+  cars:[['infernus',.17],['cheetah',.15],['admiral',.24],['taxi',.12],['van',.07],['truck',.05],['scooter',.1],['stretch',.06],['lowrider',.04]],
+  zones:['PRAIA DO REBITE','DISTRITO NEON','AVENIDA DO PI','BAIRRO DAS PALMEIRAS'],
+  palms:true, wires:false, sea:true
+ },
+ sa:{
+  sky:{night:'linear-gradient(180deg,#05071c 0,#121a48 110px,#2e2850 200px,#7a4a48 255px,#c8683a 270px,#2a1a28 271px,#170f20 480px)',
+       dusk:'linear-gradient(180deg,#2c1d52 0,#6b2f62 90px,#c44a50 170px,#f07a3a 225px,#ffae48 255px,#ffd88a 270px,#8a4a3a 271px,#5a3028 330px,#2a1a1e 480px)',
+       day:'linear-gradient(180deg,#4a9ce0 0,#8fc2e0 110px,#e8dcc0 210px,#ffd9a0 262px,#ffe0b0 270px,#c99a62 271px,#a8784a 480px)'},
+  tdc:'rgba(255,100,40,.32)', tnc:'rgba(16,10,44,.6)', tyc:'rgba(255,160,80,.24)', haze:'linear-gradient(180deg,rgba(255,196,130,0),rgba(255,186,110,.88))',
+  far:{top:'#dcb892',bot:'#bc9070'},
+  pal:['#f2d9b0','#e8b98a','#d9a07a','#f6e7c8','#bfd6cc','#e8a8a0','#f3c98a'],
+  billPal:['#f2d9b0','#e8b98a','#f6e7c8','#bfd6cc','#e8a8a0'],
+  glass:['#6a98c8','#35588a'], accent:['#e8573f','#2fa8a0','#f0a830'],
+  neon:['#ff7a3c','#ff4f6a','#ffd23f','#7af0ff'],
+  kinds:{lowrise:.55,tower:.28,deco:.17},
+  cars:[['lowrider',.24],['admiral',.24],['van',.12],['truck',.08],['taxi',.1],['cheetah',.08],['infernus',.06],['scooter',.04],['stretch',.04]],
+  zones:['VISTA DA COLINA','CENTRO REBITE','BAIRRO DOS PI','COSTA OESTE'],
+  palms:true, wires:true, sea:false
+ }
+};
+const TH=THEMES[cfg.theme]||THEMES.vice;
+stage.style.setProperty('--tdc',TH.tdc); stage.style.setProperty('--tnc',TH.tnc); stage.style.setProperty('--tyc',TH.tyc); $('haze').style.background=TH.haze;
+
+/* ============================ DADOS ============================ */
+const IBOV0=128450, USD0=5.42;
+const D={tOut:24,cond:'sol',rain:10,tmax:28,tmin:17,ibovPct:0.4,usdPct:-0.2,tRoom:23.4,hum:58,press:1012};
+D.ibov=IBOV0*(1+D.ibovPct/100); D.usd=USD0*(1+D.usdPct/100);
+const S={rain:false,sleep:false,piHot:false};
+const fmt=(n,d=0)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const arrowTxt=p=>`${p>=0?'▲':'▼'} ${fmt(Math.abs(p),2)}%`;
+const arrow=p=>`<span class="${p>=0?'up':'down'}">${arrowTxt(p)}</span>`;
+const dias=['dom','seg','ter','qua','qui','sex','sáb'], meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const p2=n=>String(n).padStart(2,'0');
+
+const PI={src:'off',t:null,cpu:null,ram:null,ramUsed:null,ramTot:null,disk:null,up:null,load:null,ip:'',host:'',thr:0};
+let forcePi=null, forceWanted=null, usdUntil=0, wastedAt=0;
+function simPi(){
+  PI.src='sim'; PI.t=clamp((PI.t==null?48:PI.t)+rand(-1.2,1.2),42,62); PI.cpu=clamp((PI.cpu==null?20:PI.cpu)+rand(-12,12),3,85);
+  PI.ram=clamp((PI.ram==null?38:PI.ram)+rand(-1.5,1.5),25,70); PI.ramTot=3800; PI.ramUsed=PI.ram/100*3800;
+  PI.disk=42; PI.up=(PI.up||86400)+2; PI.load=PI.cpu/25; PI.ip='simulado'; PI.host='—'; PI.thr=0;
+}
+async function pollPi(){
+  if(!STATS_URL) simPi();
+  else{
+    try{
+      const r=await fetch(STATS_URL,{cache:'no-store'}), j=await r.json();
+      if(j.temp==null&&j.cpu==null) throw new Error('sem dados');
+      PI.src=j.sim?'sim':'live'; PI.t=j.temp; PI.cpu=j.cpu; PI.ram=j.ram_pct; PI.ramUsed=j.ram_used_mb; PI.ramTot=j.ram_total_mb;
+      PI.disk=j.disk_pct; PI.up=j.uptime_s; PI.load=j.load1; PI.ip=j.ip||''; PI.host=j.host||''; PI.thr=j.throttled||0;
+    }catch(e){ PI.src='off'; }
+  }
+  if(forcePi!=null){ PI.t=forcePi; if(PI.src==='off') PI.src='sim'; }
+  piState(); renderPi();
+}
+function piState(){
+  if(PI.t==null||PI.src==='off'){ S.piHot=false; return; }
+  if(!S.piHot&&PI.t>=70) S.piHot=true; else if(S.piHot&&PI.t<=62) S.piHot=false;
+  if(PI.t>=85&&!S.sleep&&Date.now()-wastedAt>300000){ wastedAt=Date.now(); wasted(); }
+}
+const lvl=(v,a,b)=>v>=b?'#ff6b5e':v>=a?'#ffc857':'#37d67a';
+const fmtUp=s=>{ if(s==null) return '-'; const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60); return d?`${d}d ${h}h`:`${h}h ${m}m`; };
+const gb=mb=>(mb/1024).toFixed(1);
+function thrText(v){ const a=[]; if(v&1) a.push('sub-tensão agora'); if(v&4) a.push('CPU limitada agora'); if(v&8) a.push('limite de temperatura'); if(!a.length&&(v&0x50000)) a.push('já houve sub-tensão/limite'); return a.length?a.join(', '):'ok'; }
+const wanted=()=>{ if(forceWanted!=null) return forceWanted; let s=0; if(Date.now()<usdUntil) s++; if(S.piHot) s+=2; if(PI.cpu!=null&&PI.cpu>90) s++; if(PI.t!=null&&PI.t>=80) s++; return Math.min(6,s); };
+
+/* ============================ BINDINGS ============================ */
+const BIND={};
+function indexBinds(){ document.querySelectorAll('[data-b]').forEach(e=>{ (BIND[e.dataset.b]=BIND[e.dataset.b]||[]).push(e); }); }
+function fitText(el,max){ el.style.fontSize=''; const w=el.offsetWidth; if(w>max) el.style.fontSize=(parseFloat(getComputedStyle(el).fontSize)*max/w).toFixed(1)+'px'; }
+function setB(key,html){ for(const e of (BIND[key]||[])){ if(e.innerHTML!==html){ e.innerHTML=html; if(e.dataset.fit) fitText(e,+e.dataset.fit); } } }
+function setBars(k,pct,color){ document.querySelectorAll(`[data-bar="${k}"]`).forEach(e=>{ e.style.width=(clamp(pct,0,1)*100).toFixed(0)+'%'; e.style.background=color; }); }
+let lastMoney='';
+function renderHud(){
+  const d=new Date(); $('hClock').textContent=`${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  const m=`R$ ${fmt(D.usd,2)}`; const mo=$('hMoney'); if(m!==lastMoney){ mo.textContent=m; if(lastMoney){ mo.classList.remove('chg'); void mo.offsetWidth; mo.classList.add('chg'); } lastMoney=m; }
+  const hasT=PI.src!=='off'&&PI.t!=null, hp=hasT?clamp(100-(PI.t-45)/40*100,0,100):100, ar=PI.src!=='off'&&PI.ram!=null?clamp(100-PI.ram,0,100):100;
+  $('hHp').firstChild.style.width=hp.toFixed(0)+'%'; $('hHp').classList.toggle('low',hp<30); $('hAr').firstChild.style.width=ar.toFixed(0)+'%';
+  const w=wanted(), st=$('hStars'); let h=''; for(let i=0;i<6;i++) h+=`<b class="${i<w?'on':''}">★</b>`; if(st.innerHTML!==h) st.innerHTML=h; st.classList.toggle('flash',w>0);
+}
+function renderData(){
+  setB('clima.v',`${Math.round(D.tOut)}°`);
+  setB('clima.s',`${Math.round(D.tmax)}° / ${Math.round(D.tmin)}° · chuva ${Math.round(D.rain)}%`);
+  document.querySelectorAll('[data-ico]').forEach(e=>{ e.className='ico '+D.cond; });
+  setB('bolsa.v',fmt(D.ibov)); setB('bolsa.s',arrow(D.ibovPct));
+  setB('dolar.v',`R$ ${fmt(D.usd,2)}`); setB('dolar.s',arrow(D.usdPct));
+  setB('sala.v',`${fmt(D.tRoom,1)}°`); setB('sala.s',`${Math.round(D.hum)}% · ${Math.round(D.press)} hPa`);
+  setB('tk.clima',`<span class="k">CLIMA</span> ${Math.round(D.tOut)}° ${D.cond}`);
+  setB('tk.bolsa',`<span class="k">IBOV</span> ${fmt(D.ibov)} ${arrow(D.ibovPct)}`);
+  setB('tk.dolar',`<span class="k">USD</span> ${fmt(D.usd,2)} ${arrow(D.usdPct)}`);
+  setB('tk.sala',`<span class="k">SALA</span> ${fmt(D.tRoom,1)}° ${Math.round(D.hum)}%`);
+  renderHud();
+}
+function renderClock(){
+  const d=new Date();
+  setB('hora.v',`${p2(d.getHours())}<span class="colon">:</span>${p2(d.getMinutes())}`);
+  setB('hora.s',`${dias[d.getDay()]}, ${d.getDate()} ${meses[d.getMonth()]}`);
+  const n=$('clockNote'); if(n) n.textContent=`Hora do sistema agora: ${p2(d.getHours())}:${p2(d.getMinutes())}. Se estiver errada, ajuste o fuso e o relógio do Pi.`;
+  renderHud();
+}
+function renderPi(){
+  const ok=PI.src!=='off', hasT=ok&&PI.t!=null;
+  $('dot').style.background=PI.src==='live'?'#37d67a':PI.src==='sim'?'#ffc857':'#ff4a3a';
+  setB('pi.t',hasT?`${Math.round(PI.t)}°C`:'--'); setB('pi.c',ok&&PI.cpu!=null?`${Math.round(PI.cpu)}%`:'--'); setB('pi.r',ok&&PI.ram!=null?`${Math.round(PI.ram)}%`:'--');
+  setBars('t',hasT?(PI.t-30)/55:0,hasT?lvl(PI.t,65,78):'#37d67a');
+  setBars('c',ok&&PI.cpu!=null?PI.cpu/100:0,ok&&PI.cpu!=null?lvl(PI.cpu,70,90):'#37d67a');
+  setBars('r',ok&&PI.ram!=null?PI.ram/100:0,ok&&PI.ram!=null?lvl(PI.ram,75,90):'#37d67a');
+  setB('pi.s',ok?`${fmtUp(PI.up)} · ${gb(PI.ramUsed)}/${gb(PI.ramTot)} GB`:'servidor offline?');
+  setB('tk.pi',ok?`<span class="k">PI</span> ${hasT?Math.round(PI.t)+'°':'--'} <span class="k">CPU</span> ${Math.round(PI.cpu)}% <span class="k">RAM</span> ${Math.round(PI.ram)}%`:'<span class="k">PI</span> sem dados');
+  document.querySelectorAll('.bb[data-k="pi"]').forEach(e=>e.classList.toggle('alert',S.piHot));
+  renderHud();
+  if(!$('tab-sys').hidden){
+    $('sSrc').textContent=PI.src==='live'?'ao vivo':PI.src==='sim'?'simulado':'sem conexão'; $('sSrc').style.color=PI.src==='live'?'#37d67a':PI.src==='sim'?'#ffc857':'#ff6b5e';
+    $('sT').textContent=hasT?`${PI.t.toFixed(1)} °C`:'sem sensor'; $('sT').style.color=hasT?lvl(PI.t,65,78):'';
+    $('sC').textContent=ok&&PI.cpu!=null?`${PI.cpu.toFixed(0)} %`:'-';
+    $('sR').textContent=ok&&PI.ram!=null?`${gb(PI.ramUsed)} / ${gb(PI.ramTot)} GB (${PI.ram.toFixed(0)}%)`:'-';
+    $('sD').textContent=ok&&PI.disk!=null?`${PI.disk.toFixed(0)} % usado`:'-';
+    $('sL').textContent=ok&&PI.load!=null?PI.load.toFixed(2):'-'; $('sU').textContent=ok?fmtUp(PI.up):'-';
+    $('sI').textContent=ok?(PI.ip+(PI.host&&PI.host!=='—'?` · ${PI.host}`:'')):'-';
+    $('sP').textContent=ok?thrText(PI.thr):'-'; $('sP').style.color=ok&&(PI.thr&5)?'#ff6b5e':'';
+    $('sW').textContent=`${wanted()} de 6`;
+  }
+}
+
+/* ---- eventos ---- */
+let lastIb=0,lastUs=0;
+function marketEvents(){
+  if(S.sleep){ lastIb=D.ibovPct>=1?1:D.ibovPct<=-1?-1:0; lastUs=D.usdPct>=1?1:D.usdPct<=-1?-1:0; return; }
+  const bi=D.ibovPct>=1?1:D.ibovPct<=-1?-1:0;
+  if(bi!==lastIb){ if(bi===1) mission('MISSÃO CUMPRIDA!',`BOLSA ${arrowTxt(D.ibovPct)} · RESPEITO +`); if(bi===-1) mission('MISSÃO FALHOU',`BOLSA ${arrowTxt(D.ibovPct)}`,true); lastIb=bi; }
+  const bu=D.usdPct>=1?1:D.usdPct<=-1?-1:0;
+  if(bu!==lastUs){ if(bu===1){ usdUntil=Date.now()+30000; flashBoard('dolar',9000); chase(); } if(bu===-1) mission('MISSÃO CUMPRIDA!',`DÓLAR ${arrowTxt(D.usdPct)}`); lastUs=bu; }
+}
+function flashBoard(k,ms){ document.querySelectorAll(`.bb[data-k="${k}"]`).forEach(e=>{ e.classList.add('alert'); setTimeout(()=>e.classList.remove('alert'),ms); }); }
+function mission(title,sub,fail){ const m=$('mission'); m.className=fail?'fail':''; m.querySelector('b').textContent=title; m.querySelector('i').textContent=sub; void m.offsetWidth; m.classList.add('show'); }
+function wasted(){ const w=$('wasted'); w.classList.remove('show'); void w.offsetWidth; w.classList.add('show'); }
+let zoneI=0;
+function zonePop(){ const z=$('zone'); z.textContent=TH.zones[zoneI++%TH.zones.length]; z.classList.remove('show'); void z.offsetWidth; z.classList.add('show'); }
+let simStep=0;
+function simTick(){
+  const k=simStep++%4;
+  if(k===0){ D.ibovPct=clamp(D.ibovPct*.88+rand(-.5,.5),-3.5,3.5); D.ibov=IBOV0*(1+D.ibovPct/100); }
+  if(k===1&&!REAL){ D.usdPct=clamp(D.usdPct*.88+rand(-.5,.5),-3.5,3.5); D.usd=USD0*(1+D.usdPct/100); }
+  if(k===2&&!SENSOR_URL){ D.tRoom+=(23.4-D.tRoom)*.15+rand(-.25,.25); D.hum=clamp(D.hum+rand(-1.5,1.5),35,85); D.press+=rand(-.7,.7); }
+  if(k===3&&!REAL){ D.tOut+=rand(-.4,.4); }
+  renderData(); marketEvents();
+}
+async function loadReal(){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`);
+    const j=await r.json(), c=j.current.weather_code;
+    D.tOut=j.current.temperature_2m; D.tmax=j.daily.temperature_2m_max[0]; D.tmin=j.daily.temperature_2m_min[0];
+    D.rain=j.daily.precipitation_probability_max[0]||0;
+    D.cond=(c>=51&&c<=67)||(c>=80&&c<=82)||c>=95?'chuva':(c<=1?'sol':'nublado');
+  }catch(e){}
+  try{ const r=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL'), j=await r.json(); D.usd=+j.USDBRL.bid; D.usdPct=+j.USDBRL.pctChange; }catch(e){}
+  updateState(); renderData(); marketEvents();
+}
+async function loadSensors(){
+  try{ const j=await (await fetch(SENSOR_URL)).json(); if(j.t!=null) D.tRoom=+j.t; if(j.h!=null)D.hum=+j.h; if(j.p!=null)D.press=+j.p; renderData(); }catch(e){}
+}
+
+/* ============================ CENÁRIO: PRÉDIOS ============================ */
+const SIGNS=['HOTEL','CAFÉ','DINER','24H','BAR','DISCO','MOTEL','ARCADE','PIZZA','CLUB'];
+const WINC=['#ffd27a','#ffd27a','#ff9ad0','#8ff0ff','#fff4d6'];
+function defsFor(p,seed,o){
+  const r=rng(seed); let s='';
+  s+=`<pattern id="${p}wd" width="40" height="48" patternUnits="userSpaceOnUse">`;
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++) s+=`<rect x="${i*10+2}" y="${j*12+2.5}" width="6" height="7" fill="#33407a"/><rect x="${i*10+2}" y="${j*12+2.5}" width="6" height="2" fill="rgba(255,255,255,.35)"/><rect x="${i*10+1}" y="${j*12+1.2}" width="8" height="1.1" fill="rgba(0,0,0,.35)"/>`;
+  s+='</pattern>';
+  for(let k=0;k<3;k++){ let c=''; for(let i=0;i<4;i++)for(let j=0;j<4;j++){ if(r()<.52) c+=`<rect x="${i*10+2}" y="${j*12+2.5}" width="6" height="7" fill="${WINC[Math.floor(r()*WINC.length)]}"/>`; }
+    s+=`<pattern id="${p}p${k}" width="40" height="48" patternUnits="userSpaceOnUse">${c}</pattern>`; }
+  s+=`<linearGradient id="${p}gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${o.glass[0]}"/><stop offset="1" stop-color="${o.glass[1]}"/></linearGradient>`;
+  s+=`<linearGradient id="${p}fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${o.far?o.far.top:'#fff'}"/><stop offset="1" stop-color="${o.far?o.far.bot:'#ccc'}"/></linearGradient>`;
+  s+=`<pattern id="${p}mu" width="6" height="40" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="1" height="40" fill="rgba(255,255,255,.22)"/></pattern>`;
+  s+=`<pattern id="${p}aw" width="10" height="7" patternUnits="userSpaceOnUse"><rect width="5" height="7" fill="${o.accent[0]}"/><rect x="5" width="5" height="7" fill="#fff"/></pattern>`;
+  return `<defs>${s}</defs>`;
+}
+function flamingo(x,y,c){ return `<g transform="translate(${x} ${y})" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="18" rx="8" ry="5.2" fill="${c}" fill-opacity=".25"/><path d="M15 15C21 10 20 4 15 3C11 3 10 6 12 8"/><circle cx="12" cy="3.4" r="1.6" fill="${c}"/><path d="M10 3.6L6 6"/><path d="M8 22L7 31M12 22L14 26L12 31"/></g>`; }
+function drawB(o,r,pk,x,w,h,fx){
+  const sw=o.sw, y=o.base-h, p=o.p, f=n=>n.toFixed(1), T=o.th;
+  let art='',lit='',tn='';
+  const st=sw?` stroke="${OL}" stroke-width="${sw}" stroke-linejoin="round"`:'';
+  if(o.far){
+    const top=r()<.35?8+r()*14:0;
+    art+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="url(#${p}fg)"/>`;
+    if(top) art+=`<rect x="${f(x+w*.2)}" y="${f(y-top)}" width="${f(w*.6)}" height="${f(top)}" fill="url(#${p}fg)"/>`;
+    if(r()<.3) art+=`<rect x="${f(x+w/2-1)}" y="${f(y-top-14)}" width="2" height="${f(14)}" fill="${o.far.bot}"/>`;
+    tn+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}"/>`;
+    return {art,lit,tn};
+  }
+  let kind=fx?fx.kind:(()=>{const q=r(); let c=0; for(const k in T.kinds){ c+=T.kinds[k]; if(q<=c) return k; } return 'deco';})();
+  if(w<34&&kind==='deco') kind='lowrise';
+  const body=pk(o.pal), dark=shade(body,.7), d=Math.min(9,w*.16), ac=pk(T.accent), nc=pk(T.neon);
+  const sideP=c=>`<path d="M${f(x+w)} ${f(y)}l${f(d)} ${f(-d*.45)}v${f(h)}l${f(-d)} ${f(d*.45)}Z" fill="${c}"${st}/>`;
+  const win=(top,bot,pat)=>{ const cw=Math.floor((w-10)/10)*10, ch=Math.floor((h-top-bot)/12)*12; if(cw<10||ch<12) return ['','']; const ox=x+(w-cw)/2, oy=y+top;
+    return [`<svg x="${f(ox)}" y="${f(oy)}" width="${cw}" height="${ch}"><rect width="${cw}" height="${ch}" fill="url(#${p}wd)"/></svg>`,
+            `<svg x="${f(ox)}" y="${f(oy)}" width="${cw}" height="${ch}"><rect width="${cw}" height="${ch}" fill="url(#${p}p${Math.floor(r()*3)})"/></svg>`]; };
+  tn+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}"/><path d="M${f(x+w)} ${f(y)}l${f(d)} ${f(-d*.45)}v${f(h)}l${f(-d)} ${f(d*.45)}Z"/>`;
+  if(kind==='tower'){
+    art+=sideP(shade(o.glass[1],.8));
+    art+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="url(#${p}gl)"${st}/><rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="url(#${p}mu)"/>`;
+    const c=r();
+    if(c<.5&&w>30){ const sw2=w*.62, sh=14+r()*22; art+=`<rect x="${f(x+(w-sw2)/2)}" y="${f(y-sh)}" width="${f(sw2)}" height="${f(sh)}" fill="url(#${p}gl)"${st}/>`; tn+=`<rect x="${f(x+(w-sw2)/2)}" y="${f(y-sh)}" width="${f(sw2)}" height="${f(sh)}"/>`; }
+    else art+=`<path d="M${f(x+w*.15)} ${f(y)}L${f(x+w/2)} ${f(y-16)}L${f(x+w*.85)} ${f(y)}Z" fill="${shade(o.glass[1],.9)}"${st}/>`;
+    const ah=14+r()*16; art+=`<rect x="${f(x+w/2-1)}" y="${f(y-ah-16)}" width="2" height="${f(ah)}" fill="${OL}"/><circle cx="${f(x+w/2)}" cy="${f(y-ah-16)}" r="2" fill="#ff3b4a"${st}/>`;
+    const wn=win(8,6); lit+=wn[1];
+  } else if(kind==='lowrise'){
+    art+=sideP(dark);
+    art+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="${body}"${st}/><rect x="${f(x-1.5)}" y="${f(y-3.5)}" width="${f(w+3)}" height="4.5" fill="${dark}"${st}/>`;
+    if(r()<.6&&w>30){ const bx=x+w*(.15+r()*.4); art+=`<rect x="${f(bx)}" y="${f(y-11)}" width="13" height="8" rx="1.5" fill="${shade(body,.82)}"${st}/>`; }
+    const wn=win(10,h>40?18:6); art+=wn[0]; lit+=wn[1];
+    if(h>40) art+=`<rect x="${f(x)}" y="${f(y+h-15)}" width="${f(w)}" height="7" fill="url(#${p}aw)"${st}/>`;
+  } else { /* deco */
+    art+=sideP(dark);
+    art+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="3" fill="${body}"${st}/>`;
+    art+=`<rect x="${f(x)}" y="${f(y+h*.07)}" width="${f(w)}" height="${f(Math.max(4,h*.05))}" fill="${ac}"${st}/><rect x="${f(x)}" y="${f(y+h*.07+Math.max(4,h*.05)+3)}" width="${f(w)}" height="2" fill="${pk(T.accent)}"${st}/>`;
+    let th=0;
+    if(!fx&&w>=50&&r()<.7){ const tw=w*.5; th=12+r()*18; art+=`<rect x="${f(x+(w-tw)/2)}" y="${f(y-th)}" width="${f(tw)}" height="${f(th)}" rx="2" fill="${shade(body,1.05)}"${st}/><rect x="${f(x+(w-tw)/2)}" y="${f(y-th+3)}" width="${f(tw)}" height="3" fill="${ac}"${st}/>`; tn+=`<rect x="${f(x+(w-tw)/2)}" y="${f(y-th)}" width="${f(tw)}" height="${f(th)}"/>`; }
+    const wn=win(h*.24,16); art+=wn[0]; lit+=wn[1];
+    art+=`<rect x="${f(x)}" y="${f(y+h-13)}" width="${f(w)}" height="13" fill="${dark}"${st}/><rect x="${f(x+w/2-6)}" y="${f(y+h-11)}" width="12" height="11" rx="5" fill="#3a2a5a"${st}/>`;
+    if(!fx&&r()<.45&&cfgIsVice){ if(w>=44){ lit+=flamingo(x+6,y+h*.3,'#ff5fa8'); } }
+  }
+  if(o.neon&&r()<o.neon){ lit+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="2.2" fill="${nc}"/>`; if(r()<.5) lit+=`<rect x="${f(x+1)}" y="${f(y)}" width="1.8" height="${f(h*.5)}" fill="${nc}" opacity=".85"/>`; }
+  if(o.signs&&w>=56&&!fx&&r()<.3){ const t=pk(SIGNS), c=pk(T.neon), sy=y+h*.16;
+    lit+=`<rect x="${f(x+w/2-19)}" y="${f(sy)}" width="38" height="15" rx="2" fill="#14061f" stroke="${c}" stroke-width="1.4"/><text x="${f(x+w/2)}" y="${f(sy+11.5)}" text-anchor="middle" font-family="Lilita One,Impact,sans-serif" font-size="11" fill="${c}">${t}</text>`; }
+  if(fx){ const px=x+10; art+=`<rect x="${px+22}" y="${f(y-16)}" width="6" height="16" fill="#2a1450"${st}/><rect x="${px+180}" y="${f(y-16)}" width="6" height="16" fill="#2a1450"${st}/><rect x="${px+12}" y="${f(y-3)}" width="184" height="4" fill="#4a2a80"${st}/>`;
+    lit+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="2.6" fill="${fx.a}"/>`; }
+  return {art,lit,tn};
+}
+let cfgIsVice=cfg.theme!=='sa';
+function genLayer(o){
+  const r=rng(o.seed), pk=a=>a[Math.floor(r()*a.length)];
+  const items=[...(o.fixed||[]).map(f=>({...f})),...(o.holes||[]).map(h=>({...h,hole:true}))].sort((a,b)=>a.x-b.x);
+  let ii=0,x=0,art='',lit='',tn='';
+  while(x<o.T-0.5){
+    let it=null;
+    if(ii<items.length&&Math.abs(items[ii].x-x)<1){ it=items[ii++]; if(it.hole){ x+=it.w; continue; } }
+    const gap=o.gapMax?o.gapMin+r()*(o.gapMax-o.gapMin):0;
+    let w,h;
+    if(it){ w=it.w; h=it.h; }
+    else{
+      const limit=ii<items.length?items[ii].x:o.T, remaining=limit-x;
+      if(remaining<22){ x=limit; continue; }
+      w=o.wMin+r()*(o.wMax-o.wMin);
+      if(remaining-w-gap<o.wMin*.7) w=remaining-gap;
+      h=o.hMin+r()*(o.hMax-o.hMin);
+    }
+    const b=drawB(o,r,pk,x,w,h,it); art+=b.art; lit+=b.lit; tn+=b.tn;
+    x+=w+gap;
+  }
+  const T=o.T, wrap=(id,body)=>`<g id="${o.p}${id}">${body}</g><use href="#${o.p}${id}" x="${T}"/>`;
+  return {art:defsFor(o.p,o.seed+7,o)+wrap('A',art+(o.extra||'')), lit:wrap('L',lit), tn:wrap('N',tn)};
+}
+function mountStrip(id,T,speed,g){
+  const el=$(id); el.style.width=(2*T)+'px'; el.style.setProperty('--T',T+'px'); el.style.setProperty('--D',(T/speed)+'s'); el.dataset.speed=speed;
+  const sv=(cls,body)=>`<svg ${cls?`class="${cls}"`:''} width="${2*T}" height="${H}" viewBox="0 0 ${2*T} ${H}">${body}</svg>`;
+  el.insertAdjacentHTML('beforeend',sv('',g.art)+(g.tn?sv('tint tD',g.tn)+sv('tint tN',g.tn)+sv('tint tY',g.tn):'')+(g.lit?sv('lights',g.lit):''));
+  return el;
+}
+const twice=(el,T,x,html)=>{ for(const dx of [0,T]) el.insertAdjacentHTML('beforeend',html.replace('%X%',x+dx)); };
+
+/* ---- palmeiras ---- */
+function palm(x,base,h,sc,solid){
+  const ty=base-h, tx=x+sc*5;
+  const trunk=`M${f1(x-3*sc)} ${base}Q${f1(x+8*sc)} ${f1(base-h*.55)} ${f1(tx-2.6*sc)} ${f1(ty)}L${f1(tx+2.6*sc)} ${f1(ty)}Q${f1(x+12*sc)} ${f1(base-h*.55)} ${f1(x+3*sc)} ${base}Z`;
+  let art=`<path d="${trunk}" fill="${solid||'#9a6b45'}" ${solid?'':`stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"`}/>`;
+  let tn=`<path d="${trunk}"/>`;
+  if(!solid){ for(let i=1;i<6;i++){ const yy=base-h*i/6; art+=`<path d="M${f1(x+4*sc*Math.sin(i/2))} ${f1(yy)}h${f1(5*sc)}" stroke="${OL}" stroke-width="1" opacity=".5"/>`; } }
+  const angs=[-84,-58,-34,-10,14], lens=[1,1.12,1.18,1.05,.9];
+  for(let s of [1,-1]) angs.forEach((a,i)=>{
+    const L=lens[i]*sc*(s<0?.95:1), tr=`translate(${f1(tx)} ${f1(ty)}) scale(${s*L} ${L}) rotate(${a})`, dd='M0 0C10 -14 32 -15 46 8C32 -3 12 -3 0 0Z';
+    art+=`<path transform="${tr}" d="${dd}" fill="${solid||'#2fb665'}" ${solid?'':`stroke="${OL}" stroke-width="${(1.4/L).toFixed(2)}" stroke-linejoin="round"`}/>`;
+    tn+=`<path transform="${tr}" d="${dd}"/>`; });
+  return {art,tn};
+}
+const f1=n=>(+n).toFixed(1);
+
+/* ============================ CONSTRUÇÃO DA CIDADE ============================ */
+const T_FAR=1000, T_MID=1200, T_BILL=1700, T_WALK=1500, T_CLOUD=1000, T_FG=2600;
+const BBDEF=[
+ {k:'hora', bg:'#1fc8bc',ag:'rgba(31,200,188,.7)',  a:'#2de2e6', x:70,   h:95,  kind:'lowrise'},
+ {k:'clima',bg:'#ffae2e',ag:'rgba(255,174,46,.7)',  a:'#ffb23f', x:350,  h:70,  kind:'deco'},
+ {k:'bolsa',bg:'#46b84a',ag:'rgba(70,184,74,.7)',   a:'#7bd143', x:640,  h:110, kind:'lowrise'},
+ {k:'dolar',bg:'#ff4f98',ag:'rgba(255,79,152,.7)',  a:'#ff4fa3', x:930,  h:80,  kind:'deco'},
+ {k:'sala', bg:'#9a6cff',ag:'rgba(154,108,255,.7)', a:'#9b5cff', x:1210, h:100, kind:'lowrise'},
+ {k:'pi',   bg:'#141020',ag:'rgba(55,214,122,.6)',  a:'#37d67a', x:1470, h:75,  kind:'deco'}
+];
+const ICO='<div class="ico sol" data-ico><svg class="s-sol" viewBox="0 0 32 32"><circle cx="16" cy="16" r="6" fill="#ffe14a" stroke="#14061f" stroke-width="1.6"/><g stroke="#14061f" stroke-width="3.6" stroke-linecap="round"><path d="M16 3v4M16 25v4M3 16h4M25 16h4M7 7l3 3M22 22l3 3M25 7l-3 3M10 22l-3 3"/></g><g stroke="#ffe14a" stroke-width="1.8" stroke-linecap="round"><path d="M16 3v4M16 25v4M3 16h4M25 16h4M7 7l3 3M22 22l3 3M25 7l-3 3M10 22l-3 3"/></g></svg><svg class="s-nub" viewBox="0 0 32 32"><path d="M9 24a6 6 0 0 1 0-12 8 8 0 0 1 15 2 5 5 0 0 1-1 10z" fill="#f2f4fa" stroke="#14061f" stroke-width="1.8" stroke-linejoin="round"/></svg><svg class="s-chu" viewBox="0 0 32 32"><path d="M9 20a6 6 0 0 1 0-11 8 8 0 0 1 15 2 5 5 0 0 1-1 9z" fill="#aab4c8" stroke="#14061f" stroke-width="1.8" stroke-linejoin="round"/><g stroke="#14061f" stroke-width="3.6" stroke-linecap="round"><path d="M11 24l-1.5 4M17 24l-1.5 4M23 24l-1.5 4"/></g><g stroke="#6cc4ff" stroke-width="1.8" stroke-linecap="round"><path d="M11 24l-1.5 4M17 24l-1.5 4M23 24l-1.5 4"/></g></svg></div>';
+const BBHTML={
+ hora:'<div class="l">HORA</div><div class="v" data-b="hora.v" data-fit="186">--:--</div><div class="s" data-b="hora.s">&nbsp;</div>',
+ clima:'<div class="l">CLIMA</div><div class="v" data-b="clima.v" data-fit="120">--°</div>'+ICO+'<div class="s" data-b="clima.s" data-fit="186">&nbsp;</div>',
+ bolsa:'<div class="l">IBOVESPA</div><div class="v" data-b="bolsa.v" data-fit="186">--</div><div class="s" data-b="bolsa.s">&nbsp;</div>',
+ dolar:'<div class="l">DÓLAR</div><div class="v" data-b="dolar.v" data-fit="186">--</div><div class="s" data-b="dolar.s">&nbsp;</div>',
+ sala:'<div class="l">SALA · BME280</div><div class="v" data-b="sala.v" data-fit="186">--°</div><div class="s" data-b="sala.s" data-fit="186">&nbsp;</div>',
+ pi:'<div class="l">RASPBERRY PI 4</div><div style="position:absolute;left:0;right:0;top:19px">'+
+    [['TEMP','t'],['CPU','c'],['RAM','r']].map(([l,k])=>`<div class="pr"><b>${l}</b><i><u data-bar="${k}"></u></i><em data-b="pi.${k}">--</em></div>`).join('')+
+    '</div><div class="s" data-b="pi.s" data-fit="186" style="font-size:10px;padding:2px 6px">&nbsp;</div>'
+};
+(function buildCity(){
+  const isVice=cfg.theme!=='sa';
+  $('skyNight').style.background=TH.sky.night; $('skyDusk').style.background=TH.sky.dusk; $('skyDay').style.background=TH.sky.day;
+  /* estrelas */
+  const rs=rng(11); let st=''; for(let i=0;i<70;i++){ const tw=i%4===0; st+=`<circle class="${tw?'tw':''}" cx="${(rs()*800).toFixed(0)}" cy="${(rs()*240).toFixed(0)}" r="${(.5+rs()*1.1).toFixed(1)}" fill="#fff" ${tw?`style="animation-delay:-${(rs()*3).toFixed(1)}s"`:''} opacity="${(.4+rs()*.6).toFixed(2)}"/>`; }
+  $('stars').innerHTML=st;
+  /* nuvens */
+  const cl=[[60,70,1],[330,110,.8],[620,50,1.2],[880,95,.9]].map(([x,y,s])=>`<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".22"><ellipse cx="0" cy="0" rx="46" ry="10"/><ellipse cx="-18" cy="-8" rx="22" ry="11"/><ellipse cx="12" cy="-12" rx="26" ry="13"/></g>`).join('');
+  mountStrip('clouds',T_CLOUD,5,{art:`<g id="cl">${cl}</g><use href="#cl" x="${T_CLOUD}"/>`});
+
+  /* far: horizonte distante + quirks */
+  let farExtra='';
+  if(!isVice){
+    farExtra=`<g id="hills"><path d="M0 300V262Q80 214 190 252T420 238Q520 214 640 246T860 236Q930 226 1000 258V300Z" fill="#c49a76" stroke="${OL}" stroke-width="1.6"/></g>`+
+      `<g font-family="Lilita One,Impact,sans-serif" font-size="17" fill="#fff" stroke="${OL}" stroke-width="3" paint-order="stroke" letter-spacing="2"><text x="470" y="238">REBITE</text></g>`;
+  }
+  const far=genLayer({p:'f',th:TH,T:T_FAR,base:300,hMin:40,hMax:isVice?120:150,wMin:22,wMax:50,gapMin:0,gapMax:0,seed:3,far:TH.far,glass:TH.glass,accent:TH.accent,pal:TH.pal,sw:0,extra:farExtra});
+  const farEl=mountStrip('far',T_FAR,4,far);
+  const F='#7a5aa8'; const FC=isVice?'#9a7fd0':'#b48a64';
+  twice(farEl,T_FAR,230,`<svg style="position:absolute;left:%X%px;top:196px" width="92" height="104" viewBox="0 0 92 104"><g style="transform-origin:46px 46px;animation:spin 50s linear infinite"><circle cx="46" cy="46" r="40" fill="none" stroke="${FC}" stroke-width="2.6"/><circle cx="46" cy="46" r="26" fill="none" stroke="${FC}" stroke-width="1.4"/><path d="M46 6V86M6 46H86M18 18L74 74M74 18L18 74" stroke="${FC}" stroke-width="1.4"/><g fill="#ff7ac8" stroke="${OL}" stroke-width="1"><circle cx="46" cy="6" r="3.6"/><circle cx="86" cy="46" r="3.6"/><circle cx="46" cy="86" r="3.6"/><circle cx="6" cy="46" r="3.6"/><circle cx="74" cy="18" r="3.6"/><circle cx="74" cy="74" r="3.6"/><circle cx="18" cy="74" r="3.6"/><circle cx="18" cy="18" r="3.6"/></g></g><path d="M46 46L28 100M46 46L64 100" stroke="${FC}" stroke-width="2.8"/></svg>`);
+  twice(farEl,T_FAR,820,`<svg style="position:absolute;left:%X%px;top:146px" width="26" height="156" viewBox="0 0 26 156"><path d="M13 6L4 150M13 6L22 150M8 60H18M6 100H20M10 30H16" stroke="${FC}" stroke-width="2" fill="none"/><circle class="nav" cx="13" cy="5" r="3" fill="#ff3b4a"/></svg>`);
+  if(isVice) twice(farEl,T_FAR,640,`<svg style="position:absolute;left:%X%px;top:186px" width="76" height="116" viewBox="0 0 76 116"><g fill="#8a6ac0" stroke="${OL}" stroke-width="1.4" stroke-linejoin="round"><rect x="26" y="34" width="26" height="40" rx="4"/><rect x="28" y="72" width="9" height="40" rx="3"/><rect x="42" y="72" width="9" height="40" rx="3"/><rect x="30" y="12" width="18" height="20" rx="4"/><rect x="36" y="4" width="6" height="9"/><g style="transform-origin:54px 38px;animation:wave 2.6s ease-in-out infinite alternate"><rect x="52" y="30" width="8" height="30" rx="3" transform="rotate(-20 54 34)"/></g><rect x="14" y="36" width="9" height="32" rx="3" transform="rotate(8 18 36)"/></g><g class="lights" style="opacity:var(--lt)"><rect x="33" y="19" width="5" height="4" fill="#ff3b4a"/><rect x="40" y="19" width="5" height="4" fill="#ff3b4a"/></g></svg>`);
+
+  /* mid */
+  const mid=genLayer({p:'m',th:TH,T:T_MID,base:ROAD,hMin:110,hMax:235,wMin:36,wMax:72,gapMin:7,gapMax:14,seed:21,glass:TH.glass,accent:TH.accent,pal:TH.pal,sw:1.5,windows:true,neon:.4,signs:true,holes:isVice?[{x:520,w:210}]:[]});
+  mountStrip('mid',T_MID,8,mid);
+  /* billboards */
+  const fixed=BBDEF.map(b=>({x:b.x,w:228,h:b.h,a:b.a,kind:b.kind}));
+  const bill=genLayer({p:'b',th:TH,T:T_BILL,base:ROAD,hMin:55,hMax:130,wMin:40,wMax:84,gapMin:8,gapMax:14,seed:77,glass:TH.glass,accent:TH.accent,pal:TH.billPal,sw:2,windows:true,neon:.55,signs:true,fixed});
+  const billEl=mountStrip('bill',T_BILL,14,bill);
+  BBDEF.forEach(b=>{
+    const top=ROAD-b.h-16-112;
+    twice(billEl,T_BILL,b.x+10,`<div class="bb" data-k="${b.k}" style="left:%X%px;top:${top}px;--bg:${b.bg};--ag:${b.ag}"><div class="bbf"><div class="bbs">${BBHTML[b.k]}</div></div><i class="sp s1"></i><i class="sp s2"></i></div>`);
+  });
+  /* calçada: palmeiras, postes, fios */
+  const rw=rng(5); let wart='',wtn='',wlit='',x=70, poles=[];
+  while(x<T_WALK-60){
+    const q=rw();
+    if(q<(TH.palms?.62:.2)){ const pm=palm(x,ROAD,58+rw()*34,.95+rw()*.25); wart+=pm.art; wtn+=pm.tn; }
+    else{ const h=66; wart+=`<rect x="${x}" y="${ROAD-h}" width="4" height="${h}" fill="#3a3550" stroke="${OL}" stroke-width="1.4"/><rect x="${x-9}" y="${ROAD-h}" width="16" height="4" fill="#3a3550" stroke="${OL}" stroke-width="1.4"/><rect x="${x-12}" y="${ROAD-h+3}" width="9" height="5" rx="2" fill="#f2efe0" stroke="${OL}" stroke-width="1.4"/>`;
+      wlit+=`<circle cx="${x-7}" cy="${ROAD-h+10}" r="32" fill="url(#lampG)"/>`; poles.push(x+2); }
+    x+=120+rw()*180;
+  }
+  if(TH.wires){ let px=40; const pp=[]; while(px<T_WALK){ pp.push(px); px+=230; }
+    pp.forEach((pxx,i)=>{ wart+=`<rect x="${pxx}" y="${ROAD-96}" width="5" height="96" fill="#5a4030" stroke="${OL}" stroke-width="1.4"/><rect x="${pxx-14}" y="${ROAD-92}" width="33" height="4" fill="#5a4030" stroke="${OL}" stroke-width="1.2"/>`;
+      const nx=(i+1<pp.length?pp[i+1]:pp[0]+T_WALK); for(const dy of [-91,-86]) wart+=`<path d="M${pxx+2} ${ROAD+dy}Q${(pxx+nx)/2} ${ROAD+dy+18} ${nx+2} ${ROAD+dy}" fill="none" stroke="${OL}" stroke-width="1.2"/>`; }); }
+  mountStrip('walk',T_WALK,46,{art:`<g id="wA">${wart}</g><use href="#wA" x="${T_WALK}"/>`,tn:`<g id="wN">${wtn}</g><use href="#wN" x="${T_WALK}"/>`,lit:`<g id="wL">${wlit}</g><use href="#wL" x="${T_WALK}"/>`});
+  /* primeiro plano: palmeiras gigantes em silhueta */
+  let fg='', rf=rng(9);
+  [[260,470,420],[1010,480,440],[1790,470,400]].forEach(([fx,base,h])=>{ const pm=palm(fx,base,h,2.2,OL); fg+=pm.art; });
+  mountStrip('fg',T_FG,120,{art:`<g id="fgA">${fg}</g><use href="#fgA" x="${T_FG}"/>`});
+})();
+document.head.insertAdjacentHTML('beforeend','<style>@keyframes wave{from{transform:rotate(-12deg)}to{transform:rotate(18deg)}}</style>');
+
+/* ============================ VEÍCULOS ============================ */
+let pace=cfg.pace;
+const ST=` stroke="${OL}" stroke-width="1.5" stroke-linejoin="round"`;
+const GLASS='#4a3f86';
+const WH=cx=>`<g transform="translate(${cx} 28)"><circle r="7.4" fill="#1b1230"${ST}/><g class="spin"><circle r="3.6" fill="#dfe4f6"/><path d="M-3.6 0H3.6M0-3.6V3.6" stroke="#6a6488" stroke-width="1"/></g></g>`;
+const GWH=cx=>`<g transform="translate(${cx} 28)"><circle r="7.4" fill="#1b1230"${ST}/><g class="spin"><circle r="4.6" fill="#f2c230"/><path d="M-4.6 0H4.6M0-4.6V4.6M-3.2-3.2L3.2 3.2M-3.2 3.2L3.2-3.2" stroke="#8a6a10" stroke-width=".9"/></g></g>`;
+const LT=`<path d="M92 19.4L99 21V23.4L90 22.6Z" fill="#fff6c0"${ST}/><rect x="2" y="20" width="5" height="3.4" rx="1" fill="#ff3b4a"/>`;
+function sedan(c,extra){ return `<path d="M3 28V22Q3 19 9 18.4L24 16.4H78L92 18.4Q98 19.4 98 23V28Z" fill="${c}"${ST}/><path d="M27 16.4L34 6.6Q36 5 40 5H63Q67 5 69 7.6L77 16.4Z" fill="${c}"${ST}/><path d="M31 15.4 36 7.6H46V15.4ZM49 15.4V7.6H60Q62.5 7.6 64 9.6L69 15.4Z" fill="${GLASS}"${ST}/><path d="M5 22.5H96" stroke="rgba(0,0,0,.3)" stroke-width="1.2"/><path d="M28 7.4L34 6.2" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>`+(extra||'')+LT+WH(24)+WH(76); }
+function carBody(type,c){
+  switch(type){
+    case 'infernus': return `<path d="M3 28V23Q3 20 8 19.4L30 17Q43 11 58 11.5L84 15.5Q98 18 99 23V28Z" fill="${c}"${ST}/><path d="M44 15.5Q50 8.2 59 8.6L74 15.5Z" fill="${GLASS}"${ST}/><path d="M36 20H50V23.6H36Z" fill="${OL}"/><path d="M2 17H15V20.4H2Z" fill="${shade(c,.7)}"${ST}/><path d="M6 25.4H96" stroke="rgba(255,255,255,.6)" stroke-width="1.3"/>`+LT+WH(24)+WH(78);
+    case 'cheetah': return `<path d="M3 28V22.5Q3 19 10 18.3L32 16Q42 9 57 9.4Q66 10 72 15.5L90 17.5Q99 19 99 24V28Z" fill="${c}"${ST}/><path d="M44 15.4Q49 10.6 57 10.8Q63 11.2 67 15.6Z" fill="${GLASS}"${ST}/><path d="M6 23.5H96" stroke="rgba(255,255,255,.55)" stroke-width="1.3"/>`+LT+WH(25)+WH(78);
+    case 'admiral': return sedan(c);
+    case 'taxi': return sedan('#ffd23f',`<rect x="44" y="0.8" width="12" height="4.2" rx="1.2" fill="#fff6c0"${ST}/><path d="M6 21.8H94" stroke="${OL}" stroke-width="2" stroke-dasharray="3 3"/>`);
+    case 'police': return sedan('#f4f4fb',`<rect x="5" y="21" width="91" height="3.4" fill="#2a6bff"/><rect x="38" y="17" width="26" height="9" fill="${OL}" opacity=".85"/><rect x="42" y="0.6" width="14" height="4.4" rx="1" fill="#222"${ST}/><rect class="sR" x="42" y="0.6" width="7" height="4.4" fill="#ff2a3a"/><rect class="sB" x="49" y="0.6" width="7" height="4.4" fill="#2a6bff"/>`);
+    case 'lowrider': return `<path d="M3 29V24Q3 21 9 20.4L24 18.4H78L92 20.4Q98 21.4 98 25V29Z" fill="${c}"${ST}/><path d="M27 18.4L34 10Q36 8.6 40 8.6H63Q67 8.6 69 11L77 18.4Z" fill="${c}"${ST}/><path d="M31 17.6 36 11H46V17.6ZM49 17.6V11H60Q62.5 11 64 12.6L69 17.6Z" fill="${GLASS}"${ST}/><path d="M5 25H96" stroke="#f2c230" stroke-width="1.6"/>`+`<path d="M92 21.4L99 23V25.4L90 24.6Z" fill="#fff6c0"${ST}/><rect x="2" y="22" width="5" height="3.4" rx="1" fill="#ff3b4a"/>`+GWH(24)+GWH(76);
+    case 'van': return `<path d="M3 28V9Q3 5 8 5H56L74 14L86 16.5Q91 17.5 91 21V28Z" fill="${c}"${ST}/><path d="M59 13.5 54.5 7H64L73 13.5Z" fill="${GLASS}"${ST}/><rect x="7" y="10" width="44" height="6" fill="rgba(255,255,255,.4)"/>`+LT+WH(20)+WH(70);
+    case 'truck': return `<rect x="3" y="2" width="55" height="26" rx="2.5" fill="#e6e0fa"${ST}/><rect x="3" y="12" width="55" height="5" fill="${c}"/><path d="M60 28V10L66 5H77L89 16Q91 17.5 91 21V28Z" fill="${c}"${ST}/><path d="M67 11 69 7H76L84 14H67Z" fill="${GLASS}"${ST}/>`+LT+WH(15)+WH(44)+WH(76);
+    case 'ambulance': return `<path d="M3 28V9Q3 5 8 5H56L74 14L86 16.5Q91 17.5 91 21V28Z" fill="#f6f6fc"${ST}/><path d="M59 13.5 54.5 7H64L73 13.5Z" fill="${GLASS}"${ST}/><rect x="3" y="17" width="88" height="3.4" fill="#ff3b4a"/><path d="M22 6.5h4v-3h3v3h4v3h-4v3h-3v-3h-4Z" fill="#ff3b4a"/><rect class="sR" x="34" y="1.4" width="8" height="4" fill="#ff2a3a"${ST}/><rect class="sB" x="42" y="1.4" width="8" height="4" fill="#2a6bff"${ST}/>`+LT+WH(20)+WH(70);
+    case 'scooter': return `<path d="M38 28L36 21Q36 18 40 18H62L72 12L76 13L72 21V28Z" fill="${c}"${ST}/><path d="M72 13L79 8" stroke="${OL}" stroke-width="2.4" stroke-linecap="round"/><rect x="44" y="8" width="9" height="11" rx="3" fill="#ff5fa8"${ST}/><path d="M50 18L57 25V28" fill="none" stroke="#2a3a8a" stroke-width="3.4" stroke-linecap="round"/><circle cx="49" cy="5" r="4.4" fill="#f0c8a0"${ST}/><path d="M44.4 5Q49 -1 53.6 5Z" fill="#ff3b4a"${ST}/><rect x="31" y="6" width="12" height="10" rx="1" fill="#fff"${ST}/><rect x="31" y="9" width="12" height="2.4" fill="#ff5fa8"/><path d="M76 17L80 16" stroke="#fff6c0" stroke-width="2.4" stroke-linecap="round"/>`+`<g transform="translate(30 28)"><circle r="6.4" fill="#1b1230"${ST}/><g class="spin"><circle r="2.8" fill="#dfe4f6"/><path d="M-2.8 0H2.8" stroke="#6a6488"/></g></g><g transform="translate(72 28)"><circle r="6.4" fill="#1b1230"${ST}/><g class="spin"><circle r="2.8" fill="#dfe4f6"/><path d="M-2.8 0H2.8" stroke="#6a6488"/></g></g>`;
+    case 'stretch': return `<path d="M3 28V22Q3 19 9 18.4L24 16.4H120L136 18.4Q150 19.4 150 23V28Z" fill="${c}"${ST}/><path d="M30 16.4L37 7.4Q39 6 43 6H108Q112 6 115 9L122 16.4Z" fill="${c}"${ST}/><path d="M34 15.6 39 8.4H56V15.6ZM59 15.6V8.4H76V15.6ZM79 15.6V8.4H96V15.6ZM99 15.6V8.4H108Q110.5 8.4 112 10.4L116 15.6Z" fill="${GLASS}"${ST}/><path d="M5 22.5H148" stroke="rgba(0,0,0,.3)" stroke-width="1.2"/><path d="M142 19.4L149 21V23.4L140 22.6Z" fill="#fff6c0"${ST}/><rect x="2" y="20" width="5" height="3.4" rx="1" fill="#ff3b4a"/>`+WH(26)+WH(124);
+    default: return sedan(c);
+  }
+}
+const carW=t=>t==='stretch'?152:100;
+function carSVG(type,c,ug,scale,flip){
+  const vw=carW(type), w=vw*scale, h=36*scale;
+  return `<svg class="car${flip?' flip':''}${type==='lowrider'?' lowr':''}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" viewBox="0 0 ${vw} 36"><path class="beam" d="M${vw-2} 20L${vw+70} 8L${vw+70} 34Z" fill="url(#beamG)"/><rect class="ug" x="8" y="29" width="${vw-24}" height="4" rx="2" fill="${ug}"/>${carBody(type,c)}</svg>`;
+}
+function launch(parent,html,top,x0,x1,speed,cls=''){
+  const el=document.createElement('div'); el.className='mv '+cls;
+  el.style.top=top+'px'; el.style.setProperty('--x0',x0+'px'); el.style.setProperty('--x1',x1+'px'); el.style.setProperty('--D',(Math.abs(x1-x0)/speed).toFixed(2)+'s');
+  el.innerHTML=html; parent.appendChild(el);
+  const an=el.getAnimations&&el.getAnimations()[0]; if(an&&an.updatePlaybackRate) an.updatePlaybackRate(pace);
+  el.addEventListener('animationend',e=>{ if(e.target===el) el.remove(); });
+  return el;
+}
+const CARCOL=['#ff4fa3','#2de2e6','#ffd23f','#9b5cff','#f1f1ff','#ff7a3c','#37d67a','#ff3b4a'];
+const lanes={far:{parent:$('trafficFar'),bottom:428,scale:.78,flip:true,lo:92,hi:101,last:96,min:2.8},
+             near:{parent:$('trafficNear'),bottom:454,scale:1,flip:false,lo:145,hi:156,last:150,min:2.4},
+             fast:{parent:$('trafficNear'),bottom:446,scale:.96,flip:false,lo:170,hi:240,last:200,min:99}};
+function weighted(list){ let t=0; for(const [,w] of list) t+=w; let q=Math.random()*t; for(const [k,w] of list){ q-=w; if(q<=0) return k; } return list[0][0]; }
+function spawnCar(lane,type,speed,color){
+  const L=lanes[lane]; if(L.parent.children.length>9) return null;
+  type=type||weighted(TH.cars); color=color||(type==='lowrider'?pick(['#9b3cff','#ff4fa3','#2de2e6']):pick(CARCOL));
+  const sp=speed||(L.last=clamp(L.last+rand(-4,4),L.lo,L.hi)), sc=L.scale*(type==='truck'?1.03:1);
+  const w=carW(type)*sc, top=L.bottom-34*sc;
+  return launch(L.parent,carSVG(type,color,pick(TH.neon),sc,L.flip),top,L.flip?820:-w-20,L.flip?-w-20:820,sp);
+}
+function scheduleCars(lane){ const L=lanes[lane]; setTimeout(()=>{ spawnCar(lane); scheduleCars(lane); },rand(L.min,L.min+3.4)*1000/pace); }
+function chase(){ const c=spawnCar('fast','cheetah',235,'#ff4fa3'); if(!c) return; setTimeout(()=>spawnCar('fast','police',235),520/pace); }
+function lowrider(){ spawnCar('near','lowrider',150); }
+
+/* ---- pedestres ---- */
+const SHIRT=['#ff5fa8','#2fe0d0','#ffd23f','#9b5cff','#ff7a3c','#f4f4ff'];
+function pedSVG(){
+  const sh=pick(SHIRT), pants=pick(['#f4f4ff','#3a4a9a','#14061f','#ffe9b0']), skin=pick(['#f0c8a0','#c8905c','#8a5a3a','#f4d6b8']);
+  return `<svg class="ped" width="18" height="34" viewBox="0 0 18 34" style="overflow:visible"><rect class="lg b" x="7" y="19" width="4.6" height="13" rx="2" fill="${pants}"${ST}/><rect class="lg" x="7" y="19" width="4.6" height="13" rx="2" fill="${shade(pants,.85)}"${ST}/><rect x="4.5" y="9" width="9" height="12" rx="3" fill="${sh}"${ST}/><rect class="ar" x="8" y="10" width="3" height="10" rx="1.5" fill="${sh}"${ST}/><circle cx="9" cy="5.2" r="4.4" fill="${skin}"${ST}/><rect x="8.6" y="3.6" width="6" height="2.6" rx="1" fill="${OL}"/></svg>`;
+}
+function spawnPed(){
+  const par=$('peds'); if(par.children.length>6) return;
+  const right=Math.random()<.5, sp=rand(22,34), sc=rand(.95,1.15);
+  const el=launch(par,pedSVG(),ROAD-33*sc,right?-30:830,right?830:-30,sp);
+  const sv=el.firstChild; sv.setAttribute('width',(18*sc).toFixed(0)); sv.setAttribute('height',(34*sc).toFixed(0)); if(!right) sv.style.transform='scaleX(-1)';
+}
+
+/* ---- aeronaves ---- */
+function bannerMsgAt(i){
+  const m=[
+    ()=>`IBOVESPA ${fmt(D.ibov)}  ${arrowTxt(D.ibovPct)}`,
+    ()=>`DÓLAR R$ ${fmt(D.usd,2)}  ${arrowTxt(D.usdPct)}`,
+    ()=>`SALA ${fmt(D.tRoom,1)}°  ·  ${Math.round(D.hum)}% UMIDADE`,
+    ()=>`${Math.round(D.tOut)}° LÁ FORA  ·  CHUVA ${Math.round(D.rain)}%`,
+    ()=>PI.src!=='off'&&PI.t!=null?`PI ${Math.round(PI.t)}°C  ·  CPU ${Math.round(PI.cpu)}%  ·  RAM ${Math.round(PI.ram)}%`:'RASPBERRY PI NO AR'
+  ];
+  return m[i%m.length]();
+}
+let bannerIdx=0;
+const PLANE=`<svg width="64" height="28" viewBox="0 0 64 28" style="position:absolute;right:0;top:4px;overflow:visible"><path d="M2 12Q2 8 10 8H48Q58 8 63 12Q58 16 48 16H10Q2 16 2 12Z" fill="#f4f4fb"${ST}/><path d="M4 9L1 0H10L14 9Z" fill="#ff4fa3"${ST}/><path d="M26 12L17 25H31L41 12Z" fill="#c8c8e6"${ST}/><g fill="${OL}"><rect x="42" y="9.5" width="6" height="3" rx="1"/><rect x="33" y="9.5" width="6" height="3" rx="1"/><rect x="24" y="9.5" width="6" height="3" rx="1"/></g><circle class="nav" cx="27" cy="25" r="1.8" fill="#ff3b4a"/></svg>`;
+function plane(){
+  if($('air').children.length>3) return;
+  const mi=bannerIdx++, txt=bannerMsgAt(mi), bw=Math.round(Math.max(txt.length,28)*7.4+22), tot=bw+26+64, y=rand(46,112);
+  launch($('air'),`<div style="position:relative;width:${tot}px;height:34px"><div class="banner" data-m="${mi}" style="width:${bw}px">${txt}</div><div class="rope" style="left:${bw}px;width:26px"></div>${PLANE}</div>`,y,-tot-20,830,40,'air');
+}
+function jet(){
+  if($('air').children.length>3) return;
+  const right=Math.random()<.5, y=rand(30,90), x0=right?-260:830, x1=right?830:-260;
+  launch($('air'),`<div style="position:relative;width:240px;height:14px;transform:${right?'none':'scaleX(-1)'}"><div style="position:absolute;left:0;top:6px;width:190px;height:2px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.8))"></div><svg width="46" height="14" viewBox="0 0 46 14" style="position:absolute;right:0;top:0;overflow:visible"><path d="M1 7L12 5L34 5Q44 6 45 7Q44 8 34 9L12 9Z" fill="#f4f4fb"${ST}/><path d="M14 5L8 0H14L22 5ZM14 9L8 14H14L22 9Z" fill="#c8c8e6"${ST}/><circle class="nav" cx="3" cy="7" r="1.4" fill="#ff3b4a"/></svg></div>`,y,x0,x1,150,'air');
+}
+function blimp(){
+  if($('air').children.length>3) return;
+  const h=new Date().getHours(), msg=h<12?'BOM DIA':h<18?'BOA TARDE':'BOA NOITE', y=rand(60,100);
+  launch($('air'),`<div style="position:relative;width:130px;height:56px"><svg width="130" height="56" viewBox="0 0 130 56" style="position:absolute;left:0;top:0;overflow:visible"><defs><linearGradient id="bl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#ff7ab0"/></linearGradient></defs><path d="M118 28L134 14V24ZM118 30L134 44V34Z" fill="#ff4fa3"${ST}/><ellipse cx="62" cy="26" rx="60" ry="22" fill="url(#bl)"${ST}/><rect x="50" y="46" width="22" height="7" rx="3" fill="#2a2060"${ST}/></svg><div class="led" style="left:34px;top:19px">${msg}</div></div>`,y,830,-170,16,'air');
+}
+function heli(){
+  if($('air').children.length>3) return;
+  const right=Math.random()<.5, y=rand(118,166), x0=right?-120:830, x1=right?830:-120;
+  launch($('air'),`<div style="width:70px;height:34px;position:relative;transform:${right?'none':'scaleX(-1)'}"><svg class="bob" width="70" height="34" viewBox="0 0 70 34" style="overflow:visible"><path class="beam" d="M30 28L6 96L66 96Z" fill="url(#searchG)"/><g fill="#3a3a5a"${ST}><ellipse cx="30" cy="20" rx="17" ry="9"/><rect x="44" y="17" width="26" height="3.5" rx="1.5"/><rect x="66" y="10" width="3.5" height="12" rx="1.5"/></g><path d="M12 20Q15 13 30 13L36 20Z" fill="#9fd8ff"${ST}/><rect x="26" y="9" width="3" height="5" fill="${OL}"/><rect class="rot" x="6" y="7" width="48" height="2.6" rx="1.2" fill="#e6e0fa"${ST}/><circle class="nav" cx="30" cy="30" r="1.8" fill="#ff3b4a"/></svg></div>`,y,x0,x1,28,'air');
+}
+function lightning(){ const f=$('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+
+/* ============================ CHUVA (canvas) ============================ */
+const cv=$('rain'), cx=cv.getContext&&cv.getContext('2d');
+const drops=Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),v:rand(420,640),l:rand(8,18)}));
+let rainA=0, lastT=performance.now();
+function renderFx(now){
+  const dt=Math.min(60,now-lastT); lastT=now; const s=dt/1000;
+  rainA+=((S.rain?1:0)-rainA)*Math.min(1,dt/900);
+  if(!cx) return; cx.clearRect(0,0,W,H);
+  if(rainA>.03){ cx.strokeStyle=`rgba(200,220,255,${(.55*rainA).toFixed(3)})`; cx.lineWidth=1.2; cx.beginPath();
+    for(const d of drops){ d.y+=d.v*s; d.x-=d.v*.2*s; if(d.y>H||d.x<0){ d.y=-12; d.x=rand(0,W+140); } cx.moveTo(d.x,d.y); cx.lineTo(d.x+d.l*.2,d.y-d.l); }
+    cx.stroke(); }
+}
+
+/* ============================ RADAR ============================ */
+(function buildRadar(){
+  let m=''; const r=rng(33);
+  m+=`<rect x="-40" y="-40" width="180" height="180" fill="#5a86b8"/>`;
+  m+=`<path d="M-40 70Q10 52 40 66T100 60L140 70V140H-40Z" fill="#4a74a4"/>`;
+  for(let i=0;i<7;i++){ const x=-30+i*24; for(let j=0;j<6;j++){ const y=-20+j*26; if(r()<.8) m+=`<rect x="${x+3}" y="${y+3}" width="18" height="20" rx="1.5" fill="${r()<.2?'#6aa86a':'#aeb4c2'}"/>`; } }
+  m+=`<path d="M-40 52L140 40M-40 20L140 36M30 -40L50 140M78 -40L66 140" stroke="#fff" stroke-width="3" opacity=".9" fill="none"/>`;
+  $('radar').innerHTML=`<svg width="96" height="96" viewBox="0 0 96 96"><defs><clipPath id="rc"><circle cx="48" cy="48" r="43"/></clipPath></defs>
+   <g clip-path="url(#rc)"><g style="transform-origin:48px 48px;animation:rmap 80s linear infinite"><g transform="translate(-2 -2)">${m}<circle cx="64" cy="32" r="3.4" fill="#e0252b" stroke="#000" stroke-width="1" style="animation:rpulse 1s steps(2) infinite"/><circle cx="30" cy="60" r="3.4" fill="#2a6bff" stroke="#000" stroke-width="1" style="animation:rpulse 1.3s steps(2) infinite"/><circle cx="70" cy="66" r="3" fill="#ffd23f" stroke="#000" stroke-width="1"/></g></g></g>
+   <circle cx="48" cy="48" r="43" fill="none" stroke="#000" stroke-width="4"/><circle cx="48" cy="48" r="45" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
+   <path d="M48 39L54 55L48 51L42 55Z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
+   <text x="48" y="12" text-anchor="middle" font-family="Lilita One,Impact,sans-serif" font-size="11" fill="#e0252b" stroke="#000" stroke-width="2.4" paint-order="stroke">N</text></svg>`;
+})();
+
+/* ============================ HORA DO DIA ============================ */
+const tod={n:1,d:0,y:0};
+function todWeights(h){
+  if(h>=20||h<5) return [1,0,0];
+  if(h<6.5){ const t=(h-5)/1.5; return [1-t,t,0]; }
+  if(h<8){ const t=(h-6.5)/1.5; return [0,1-t,t]; }
+  if(h<17) return [0,0,1];
+  if(h<18.5){ const t=(h-17)/1.5; return [0,t,1-t]; }
+  const t=(h-18.5)/1.5; return [t,1-t,0];
+}
+function inSleepWindow(d){
+  if(!cfg.sleepOn) return false;
+  const m=d.getHours()*60+d.getMinutes(), a=cfg.sleepStart, b=cfg.sleepEnd;
+  if(a===b) return false; return a<b?(m>=a&&m<b):(m>=a||m<b);
+}
+function updateState(){
+  const d=new Date(); S.sleep=inSleepWindow(d); S.rain=D.cond==='chuva';
+  let w; if(cfg.tod==='day') w=[0,0,1]; else if(cfg.tod==='dusk') w=[0,1,0]; else if(cfg.tod==='night') w=[1,0,0]; else w=todWeights(d.getHours()+d.getMinutes()/60);
+  tod.n=w[0]; tod.d=w[1]; tod.y=w[2];
+  $('skyNight').style.opacity=1; $('skyDusk').style.opacity=(tod.d+tod.y).toFixed(3); $('skyDay').style.opacity=tod.y.toFixed(3);
+  $('stars').style.opacity=tod.n.toFixed(3); $('moon').style.opacity=tod.n.toFixed(3);
+  $('sunDay').style.opacity=tod.y.toFixed(3); $('sunDusk').style.opacity=tod.d.toFixed(3); $('trail').style.opacity=(TH.sea?tod.d*.8:0).toFixed(3); $('haze').style.opacity=(tod.y*.7).toFixed(3);
+  const lt=clamp(tod.d*.85+tod.n,0,1); stage.style.setProperty('--lt',lt.toFixed(3));
+  document.querySelectorAll('.lights').forEach(e=>{ e.style.opacity=lt.toFixed(3); });
+  document.querySelectorAll('.tD').forEach(e=>{ e.style.opacity=tod.d.toFixed(3); });
+  document.querySelectorAll('.tN').forEach(e=>{ e.style.opacity=tod.n.toFixed(3); });
+  document.querySelectorAll('.tY').forEach(e=>{ e.style.opacity=tod.y.toFixed(3); });
+  $('dim').style.opacity=S.sleep?.55:0;
+  stage.classList.toggle('wet',S.rain); $('rainTint').style.opacity=S.rain?1:0;
+}
+
+/* ============================ SETUP ============================ */
+function renderSetup(){
+  $('sleepOn').textContent=cfg.sleepOn?'Ligado':'Desligado'; $('sleepOn').classList.toggle('on',cfg.sleepOn);
+  document.querySelectorAll('#panel .grp[data-k]').forEach(g=>{ const v=cfg[g.dataset.k]; g.querySelector('.hh').textContent=p2(Math.floor(v/60)); g.querySelector('.mm').textContent=p2(v%60); });
+  document.querySelectorAll('#paceGrp button').forEach(b=>b.classList.toggle('on',+b.dataset.pace===cfg.pace));
+  document.querySelectorAll('#todGrp button').forEach(b=>b.classList.toggle('on',b.dataset.tod===cfg.tod));
+  document.querySelectorAll('#themeGrp button').forEach(b=>b.classList.toggle('on',b.dataset.theme===cfg.theme));
+}
+function applyPace(){
+  pace=cfg.pace;
+  document.querySelectorAll('.strip,.mv').forEach(e=>{ (e.getAnimations?e.getAnimations():[]).forEach(a=>{ if(a.updatePlaybackRate&&(a.animationName==='scroll'||a.animationName==='move')) a.updatePlaybackRate(pace); }); });
+}
+$('sleepOn').addEventListener('click',()=>{ cfg.sleepOn=!cfg.sleepOn; saveCfg(); renderSetup(); updateState(); });
+document.querySelectorAll('#panel .grp[data-k] button').forEach(b=>b.addEventListener('click',()=>{
+  const k=b.parentNode.dataset.k, v=cfg[k], h=Math.floor(v/60), m=v%60, d=+b.dataset.d;
+  cfg[k]=b.dataset.u==='h'?((h+d+24)%24)*60+m:h*60+((m+d+60)%60); saveCfg(); renderSetup(); updateState(); }));
+document.querySelectorAll('#paceGrp button').forEach(b=>b.addEventListener('click',()=>{ cfg.pace=+b.dataset.pace; saveCfg(); renderSetup(); applyPace(); }));
+document.querySelectorAll('#todGrp button').forEach(b=>b.addEventListener('click',()=>{ cfg.tod=b.dataset.tod; saveCfg(); renderSetup(); updateState(); renderPi(); }));
+document.querySelectorAll('#themeGrp button').forEach(b=>b.addEventListener('click',()=>{ if(cfg.theme===b.dataset.theme) return; cfg.theme=b.dataset.theme; saveCfg(); location.reload(); }));
+const goFull=()=>{ const el=document.documentElement; try{ if(document.fullscreenElement) document.exitFullscreen(); else if(el.requestFullscreen) el.requestFullscreen().catch(()=>{}); }catch(e){} };
+$('fsBtn').addEventListener('click',goFull);
+if(KIOSK) addEventListener('pointerdown',()=>{ if(!document.fullscreenElement&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); },{once:true});
+$('gear').addEventListener('click',()=>{ $('panel').hidden=!$('panel').hidden; renderSetup(); renderPi(); });
+$('closeP').addEventListener('click',()=>{ $('panel').hidden=true; });
+document.querySelectorAll('#panel [data-tab]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#panel [data-tab]').forEach(x=>x.classList.toggle('on',x===b));
+  ['setup','sys','test'].forEach(k=>{ $('tab-'+k).hidden=b.dataset.tab!==k; }); renderPi(); }));
+addEventListener('keydown',e=>{ if(e.key==='d'||e.key==='D'){ $('panel').hidden=!$('panel').hidden; renderSetup(); renderPi(); } if(e.key==='f'||e.key==='F') goFull(); });
+const act={
+  rain(){D.cond='chuva';D.rain=90;}, sun(){D.cond='sol';D.rain=10;},
+  ibovUp(){lastIb=0;D.ibovPct=1.8;D.ibov=IBOV0*(1+D.ibovPct/100);}, ibovDown(){lastIb=0;D.ibovPct=-1.9;D.ibov=IBOV0*(1+D.ibovPct/100);},
+  usdUp(){lastUs=0;D.usdPct=1.6;D.usd=USD0*(1+D.usdPct/100);}, usdDown(){lastUs=0;D.usdPct=-1.4;D.usd=USD0*(1+D.usdPct/100);},
+  piHot(){forcePi=78;PI.t=78;if(PI.src==='off')PI.src='sim';}, piOk(){forcePi=null;},
+  wanted(){ forceWanted=forceWanted==null?3:null; if(forceWanted) chase(); },
+  passed(){ mission('MISSÃO CUMPRIDA!','RESPEITO +'); }, failed(){ mission('MISSÃO FALHOU','TENTE DE NOVO',true); }, wasted, zone:zonePop, lowrider,
+  plane, jet, blimp, heli, chase, lightning
+};
+$('tab-test').addEventListener('click',e=>{
+  const a=e.target.dataset&&e.target.dataset.a; if(!a||!act[a]) return;
+  act[a](); updateState(); renderData(); marketEvents(); piState(); renderPi();
+});
+
+/* ============================ LOOP ============================ */
+function fit(){ const s=Math.min(innerWidth/W,innerHeight/H); stage.style.transform=`scale(${s})`; }
+addEventListener('resize',fit); fit();
+indexBinds(); updateState(); renderClock(); renderData(); renderSetup(); renderPi();
+setInterval(()=>{ renderClock(); updateState(); },1000);
+setInterval(simTick,9000);
+setInterval(()=>{ if(S.rain&&Math.random()<.35&&!S.sleep) lightning(); },9000);
+setInterval(()=>{ const w=wanted(); if(w>0&&!S.sleep){ chase(); if(w>=4) heli(); } },14000);
+setInterval(()=>{ document.querySelectorAll('.banner').forEach(b=>{ const t=bannerMsgAt(+b.dataset.m); if(b.textContent!==t) b.textContent=t; }); },2500);
+setInterval(()=>{ if(!S.sleep) zonePop(); },100000); setTimeout(()=>{ if(!S.sleep) zonePop(); },2500);
+pollPi(); setInterval(pollPi,2000);
+if(REAL){ loadReal(); setInterval(loadReal,10*60*1000); }
+if(SENSOR_URL){ loadSensors(); setInterval(loadSensors,10000); }
+spawnCar('near'); setTimeout(()=>spawnCar('far'),600); spawnPed(); setTimeout(spawnPed,1500);
+scheduleCars('far'); scheduleCars('near');
+const every=(fn,lo,hi,first)=>{ const go=()=>{ fn(); setTimeout(go,rand(lo,hi)*1000/pace); }; setTimeout(go,first*1000); };
+every(plane,55,90,5); every(jet,40,80,20); every(blimp,120,180,35); every(heli,90,150,50); every(spawnPed,5,10,3);
+every(()=>{ if(Math.random()<.4&&!S.sleep) chase(); },70,120,45);
+applyPace();
+(function loop(t){ renderFx(t); requestAnimationFrame(loop); })(performance.now());
+(async()=>{ try{ if(navigator.wakeLock){ await navigator.wakeLock.request('screen'); document.addEventListener('visibilitychange',async()=>{ if(!document.hidden){ try{ await navigator.wakeLock.request('screen'); }catch(e){} } }); } }catch(e){} })();
+window.__city={D,S,PI,cfg,tod,act,plane,jet,blimp,heli,chase,spawnCar,spawnPed,updateState,renderData,renderPi,lanes,carSVG,pedSVG,mission,wasted,zonePop,THEMES};
+})();
+</script>
+</body>
+</html>
