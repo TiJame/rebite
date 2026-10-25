@@ -164,7 +164,8 @@ if(!window.THREE){ $('loading').textContent='Não carregou o 3D (three.min.js)';
 const T3=THREE;
 /* ============================ CONFIG ============================ */
 const Q=new URLSearchParams(location.search);
-const REAL=Q.has('real'), KIOSK=Q.has('kiosk'), SENSOR_URL=Q.get('sensors');
+const SIM=Q.has('sim'), KIOSK=Q.has('kiosk'), SENSOR_URL=Q.get('sensors');
+const SRC={clima:'sim',usd:'sim',ibov:'sim'};
 const STATS_URL=Q.get('stats')||(location.protocol.indexOf('http')===0?'/api/stats':null);
 const LAT=-21.76, LON=-43.35;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -228,9 +229,10 @@ function renderHud(neg){
   const w=wanted(), st=$('hStars'); let h=''; for(let i=0;i<6;i++) h+=`<b class="${i<w?'on':''}">★</b>`; if(st.innerHTML!==h) st.innerHTML=h; st.classList.toggle('flash',w>0);
 }
 function renderData(){
-  setB('tk.clima',`<span class="k">CLIMA</span> ${Math.round(D.tOut)}° ${D.cond}`);
-  setB('tk.bolsa',`<span class="k">IBOV</span> ${fmt(D.ibov)} ${arrow(D.ibovPct)}`);
-  setB('tk.dolar',`<span class="k">USD</span> ${fmt(D.usd,2)} ${arrow(D.usdPct)}`);
+  const sm=k=>SRC[k]==='real'?'':' <span style="color:#ff9a6a">SIM</span>';
+  setB('tk.clima',`<span class="k">CLIMA</span> ${Math.round(D.tOut)}° ${D.cond}${sm('clima')}`);
+  setB('tk.bolsa',`<span class="k">IBOV</span> ${fmt(D.ibov)} ${arrow(D.ibovPct)}${sm('ibov')}`);
+  setB('tk.dolar',`<span class="k">USD</span> ${fmt(D.usd,2)} ${arrow(D.usdPct)}${sm('usd')}`);
   setB('tk.sala',`<span class="k">SALA</span> ${fmt(D.tRoom,1)}° ${Math.round(D.hum)}%`);
   redrawScreens(); renderHud();
 }
@@ -257,18 +259,21 @@ function marketEvents(){
 }
 function simTick(){
   const k=simStep++%4;
-  if(k===0){ D.ibovPct=clamp(D.ibovPct*.88+rand(-.5,.5),-3.5,3.5); D.ibov=IBOV0*(1+D.ibovPct/100); }
-  if(k===1&&!REAL){ D.usdPct=clamp(D.usdPct*.88+rand(-.5,.5),-3.5,3.5); D.usd=USD0*(1+D.usdPct/100); }
+  if(k===0&&SRC.ibov!=='real'){ D.ibovPct=clamp(D.ibovPct*.88+rand(-.5,.5),-3.5,3.5); D.ibov=IBOV0*(1+D.ibovPct/100); }
+  if(k===1&&SRC.usd!=='real'){ D.usdPct=clamp(D.usdPct*.88+rand(-.5,.5),-3.5,3.5); D.usd=USD0*(1+D.usdPct/100); }
   if(k===2&&!SENSOR_URL){ D.tRoom+=(23.4-D.tRoom)*.15+rand(-.25,.25); D.hum=clamp(D.hum+rand(-1.5,1.5),35,85); D.press+=rand(-.7,.7); }
-  if(k===3&&!REAL){ D.tOut+=rand(-.4,.4); }
+  if(k===3&&SRC.clima!=='real'){ D.tOut+=rand(-.4,.4); }
   renderData(); if(k===0||k===1) marketEvents();
 }
 async function loadReal(){
-  try{ const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`);
-    const j=await r.json(), c=j.current.weather_code; D.tOut=j.current.temperature_2m; D.tmax=j.daily.temperature_2m_max[0]; D.tmin=j.daily.temperature_2m_min[0]; D.rain=j.daily.precipitation_probability_max[0]||0;
-    D.cond=(c>=51&&c<=67)||(c>=80&&c<=82)||c>=95?'chuva':(c<=1?'sol':'nublado'); }catch(e){}
-  try{ const r=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL'), j=await r.json(); D.usd=+j.USDBRL.bid; D.usdPct=+j.USDBRL.pctChange; }catch(e){}
+  try{ const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`);
+    const j=await r.json(), c=j.current.weather_code; if(j.current.temperature_2m==null) throw 0;
+    D.tOut=j.current.temperature_2m; D.tmax=j.daily.temperature_2m_max[0]; D.tmin=j.daily.temperature_2m_min[0]; D.rain=j.daily.precipitation_probability_max[0]||0;
+    D.cond=(c>=51&&c<=67)||(c>=80&&c<=82)||c>=95||(j.current.precipitation||0)>0.1?'chuva':(c<=1?'sol':'nublado'); SRC.clima='real'; }catch(e){ SRC.clima='sim'; }
+  try{ const r=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL'), j=await r.json(); const v=+j.USDBRL.bid; if(!v) throw 0; D.usd=v; D.usdPct=+j.USDBRL.pctChange; SRC.usd='real'; }catch(e){ SRC.usd='sim'; }
+  if(STATS_URL){ try{ const r=await fetch(STATS_URL.replace('/api/stats','/api/market'),{cache:'no-store'}), j=await r.json(); if(!j.ibov) throw 0; const prev=D.ibovPct; D.ibov=j.ibov; D.ibovPct=j.pct; SRC.ibov='real'; }catch(e){ SRC.ibov='sim'; } }
   updateState(); renderData(); marketEvents();
+  if(SRC.clima!=='real'||SRC.usd!=='real') setTimeout(loadReal,60000);
 }
 async function loadSensors(){ try{ const j=await (await fetch(SENSOR_URL)).json(); if(j.t!=null) D.tRoom=+j.t; if(j.h!=null)D.hum=+j.h; if(j.p!=null)D.press=+j.p; renderData(); }catch(e){} }
 
@@ -370,6 +375,8 @@ function drawScreen(type){
   }
   x.fillStyle='#05040a'; x.fillRect(0,0,W,H);
   x.fillStyle=c; x.fillRect(0,0,W,50); x.fillStyle='#05040a'; x.font=FONT(36); x.fillText(SL[type],18,38);
+  const isSim=(type==='clima'&&SRC.clima!=='real')||(type==='bolsa'&&SRC.ibov!=='real')||(type==='dolar'&&SRC.usd!=='real')||(type==='pi'&&PI.src!=='live')||(type==='sala'&&!SENSOR_URL);
+  if(isSim){ x.font=MONO(24); x.textAlign='right'; x.fillText('SIMULADO',494,34); x.textAlign='left'; }
   if(type==='combo'){
     const rows=[[`IBOV ${fmt(D.ibov)}`,arrowTxt(D.ibovPct),up(D.ibovPct)],[`USD ${fmt(D.usd,2)}`,arrowTxt(D.usdPct),up(D.usdPct)],[`${Math.round(D.tOut)}° ${D.cond.toUpperCase()}`,`SALA ${fmt(D.tRoom,1)}°`,'#b07bff'],[PI.src!=='off'&&PI.t!=null?`PI ${Math.round(PI.t)}°C`:'PI --',PI.src!=='off'?`CPU ${Math.round(PI.cpu)}%`:'',PI.src!=='off'?lvl(PI.t||0,65,78):'#888']];
     rows.forEach(([a,b,cl],i)=>{ const y=94+i*48; x.font=FONT(40); x.fillStyle='#fff'; x.fillText(a,18,y); x.fillStyle=cl; x.textAlign='right'; x.fillText(b,494,y); x.textAlign='left'; });
@@ -898,7 +905,7 @@ setInterval(()=>{ if(S.rain&&Math.random()<.35&&!S.sleep) lightning(); },9000);
 const every=(fn,lo,hi,first)=>{ const go=()=>{ fn(); setTimeout(go,rand(lo,hi)*1000); }; setTimeout(go,first*1000); };
 every(()=>{ if(!S.sleep) queueEv('mission'); },150,260,45);
 pollPi(); setInterval(pollPi,2000);
-if(REAL){ loadReal(); setInterval(loadReal,10*60*1000); }
+if(!SIM){ loadReal(); setInterval(loadReal,10*60*1000); }
 if(SENSOR_URL){ loadSensors(); setInterval(loadSensors,10000); }
 let last=performance.now(), frames=0, fpsT=0, fpsShown=0, frameN=0, radarT=0, first=true;
 updateChunks(P.s); setTimeout(zonePop,1500);
@@ -915,7 +922,7 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 (async()=>{ try{ if(navigator.wakeLock){ await navigator.wakeLock.request('screen'); document.addEventListener('visibilitychange',async()=>{ if(!document.hidden){ try{ await navigator.wakeLock.request('screen'); }catch(e){} } }); } }catch(e){} })();
-window.__gta={P,cfg,S,D,PI,actions,queueEv,legs,chunks,traffic,police,tod,todCur,updateState,R,scene,cam,get fps(){return fpsShown;}};
+window.__gta={SRC,loadReal,P,cfg,S,D,PI,actions,queueEv,legs,chunks,traffic,police,tod,todCur,updateState,R,scene,cam,get fps(){return fpsShown;}};
 })();
 </script>
 </body>

@@ -22,6 +22,7 @@ import socket
 import subprocess
 import threading
 import time
+import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 HOST = os.environ.get("REBITE_HOST", "127.0.0.1")
@@ -32,6 +33,26 @@ ALLOWED_EXT = {".html", ".css", ".js", ".png", ".svg", ".ico", ".json", ".woff2"
 
 STATS = {}
 LOCK = threading.Lock()
+MARKET = {"ts": 0, "data": {}}
+
+
+def fetch_ibov():
+    """Ibovespa pelo endpoint público de gráficos do Yahoo Finance (sem chave). Cache de 2 min."""
+    if time.time() - MARKET["ts"] < 120 and MARKET["data"]:
+        return MARKET["data"]
+    try:
+        req = urllib.request.Request(
+            "https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?range=1d&interval=15m",
+            headers={"User-Agent": "Mozilla/5.0 (X11; Linux aarch64) rebite-painel"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            meta = json.loads(r.read().decode())["chart"]["result"][0]["meta"]
+        price = float(meta["regularMarketPrice"])
+        prev = float(meta.get("chartPreviousClose") or meta.get("previousClose") or price)
+        data = {"ibov": round(price), "pct": round((price / prev - 1) * 100, 2), "fonte": "yahoo"}
+    except Exception as e:
+        data = {"erro": str(e)[:120]}
+    MARKET["ts"], MARKET["data"] = time.time(), data
+    return data
 
 
 def read_cpu_times():
@@ -163,6 +184,17 @@ class Handler(SimpleHTTPRequestHandler):
             self._api = True
             with LOCK:
                 body = json.dumps(STATS).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/api/market":
+            self._api = True
+            body = json.dumps(fetch_ibov()).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
